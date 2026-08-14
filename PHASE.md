@@ -84,12 +84,18 @@ TurboQuant-compressed vector index (`ARCHITECTURE.md`).
 - [x] Unit and integration test suite (`tests/test_policy_engine.py`) passing (7 tests, 34/34 total).
 
 
-### Phase 6 — Toy agent — `phase-6-toy-agent` — ⬜ not started
+### Phase 6 — Toy agent — `phase-6-toy-agent` — ✅ complete
 
-**Scope:** LangChain/CrewAI agent, 2–3 tools, wired through the proxy.
+**Scope:** Toy Agent + 7 real-world enterprise tools + 3 staged attack scenarios.
 
-**Exit criteria:** All 3 attack scenarios (direct injection, indirect
-injection, over-scope call) reproducible on demand.
+**Exit criteria:**
+- [x] Real-world tool registry implemented in `app/agent/tools.py` (7 tools: `read_email`, `write_file`, `call_http`, `send_email`, `execute_sql`, `bash_execute`, `search_web`).
+- [x] `ToyAgent` implemented in `app/agent/toy_agent.py` supporting both Unprotected Mode (vulnerable direct execution) and Sentinel Protected Mode (secured via `/screen`).
+- [x] 3 reproducible attack scenarios implemented in `app/scenarios/attack_scenarios.py` (Direct Injection, Indirect Data Poisoning, Over-Scope Call).
+- [x] Side-by-side CLI demo runner (`app/agent/demo_runner.py`) created.
+- [x] Scenario REST API endpoints (`GET /demo/scenarios`, `POST /demo/run-scenario`) implemented in `app/routers/demo.py` for Phase 7 Dashboard integration.
+- [x] Unit and integration test suite (`tests/test_toy_agent.py`) passing (6 tests, 40/40 total).
+
 
 ### Phase 7 — Dashboard — `phase-7-dashboard` — ⬜ not started
 

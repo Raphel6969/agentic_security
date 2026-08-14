@@ -151,6 +151,27 @@ confirmed. Human sign-off is still required before opening Phase 1 per
 
 **Verification (this session):** Ran full backend test suite (`pytest`, 34/34 passed in 42.39s). Path restrictions, domain restrictions, max session call limits, default deny, and hard block overrides in `/screen` all verified.
 
+---
+
+## Phase 6 — Toy Agent & Staged Attack Scenarios
+
+**What was built:** Created enterprise tool registry (`app/agent/tools.py`) with 7 real-world tools (`read_email`, `write_file`, `call_http`, `send_email`, `execute_sql`, `bash_execute`, `search_web`). Built `ToyAgent` class (`app/agent/toy_agent.py`) operating in both Unprotected Mode (vulnerable direct execution) and Sentinel Protected Mode (secured via `/screen` screening). Created 3 reproducible attack scenarios (`app/scenarios/attack_scenarios.py`) for Direct Injection, Indirect Data Poisoning, and Over-Scope Policy Violations. Built CLI side-by-side demo runner (`app/agent/demo_runner.py`) and REST API endpoints (`app/routers/demo.py`) for `GET /demo/scenarios` and `POST /demo/run-scenario`. Added 6 unit & integration tests (`tests/test_toy_agent.py`).
+
+**What's left in this phase:** None. Phase 6 exit criteria met.
+
+**Technical decisions made, and why:**
+- **Enterprise Toolset Expansion**: Designed 7 realistic tools matching production agent workflows (`read_email`, `write_file`, `call_http`, `send_email`, `execute_sql`, `bash_execute`, `search_web`) to demonstrate real-world applicability.
+- **Side-by-Side Execution Architecture**: Created dual execution paths in `ToyAgent` (`secured=False` vs `secured=True`) to clearly contrast vulnerable execution vs Sentinel runtime interception.
+- **REST API Scenario Triggers**: Exposed `POST /demo/run-scenario` so the upcoming React/TypeScript Dashboard (Phase 7) can trigger live attacks with 1 click and render visual security alerts, risk meters, and telemetry in real time.
+- **Cross-Platform CLI Runner**: Ensured `demo_runner.py` uses clean ASCII formatting (`[UNPROTECTED]`, `[SENTINEL BLOCKED]`) for flawless execution across Windows, Linux, and macOS terminals.
+
+**Deferred to later phases:**
+- React/TypeScript Dashboard UI (Phase 7).
+- Cold Storage PostgreSQL audit sync (Phase 7+).
+
+**Verification (this session):** Ran full backend test suite (`pytest`, 40/40 passed in 20.32s). Ran CLI demo runner (`python -m app.agent.demo_runner --all`) verifying side-by-side prevention across all 3 attack scenarios.
+
+
 
 
 

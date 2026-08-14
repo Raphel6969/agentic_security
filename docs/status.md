@@ -8,7 +8,7 @@ minute — see `RULE.md` Section D.
 - Full governance documentation set (README, RULE, AGENT, COLLABORATION,
   ARCHITECTURE, PHASE, API, SECURITY, CONTRIBUTING, CHANGELOG)
 - `docs/decisions.md` and `docs/status.md` (this file)
-- Repo scaffold: `backend/app/main.py` (FastAPI app + `/health` + `/screen`),
+- Repo scaffold: `backend/app/main.py` (FastAPI app + `/health` + `/screen` + `/demo`),
   `backend/app/config.py`, `backend/requirements.txt`
 - Pydantic v2 schemas: `backend/app/models.py` matching `API.md`
 - `/screen` router: `backend/app/routers/screen.py` with 3-stage Verdict Fusion, Hard Policy Enforcement, and Audit Logging
@@ -17,15 +17,19 @@ minute — see `RULE.md` Section D.
 - Stage 3 LLM-Judge Layer: `backend/app/services/llm_judge.py` (Groq API `llama-3.1-8b-instant`, selective escalation logic, strict JSON prompt, resilient fallback)
 - Hot Storage Database Layer: `backend/app/db/session.py` and `backend/app/db/models.py` (SQLite `sentinel.db` tracking `SessionCallCountDB` and `ScreenEventDB`, prepared for cold storage Postgres batch export)
 - Policy Engine: `backend/app/services/policy_engine.py` (declarative `policy.yaml` rules, path glob matching, domain whitelist validation, session call limits)
-- Test suite: 34/34 tests passing across `test_health.py` (2), `test_screen.py` (7), `test_rule_engine.py` (9), `test_ml_classifier.py` (4), `test_llm_judge.py` (5), and `test_policy_engine.py` (7)
+- Enterprise Tool Registry: `backend/app/agent/tools.py` (7 real-world tools: `read_email`, `write_file`, `call_http`, `send_email`, `execute_sql`, `bash_execute`, `search_web`)
+- Toy Agent: `backend/app/agent/toy_agent.py` (`ToyAgent` with `secured=False` unprotected mode vs `secured=True` Sentinel protected mode)
+- Staged Attack Scenarios: `backend/app/scenarios/attack_scenarios.py` (Direct Injection, Indirect Data Poisoning, Over-Scope Policy Block)
+- CLI Demo Runner: `backend/app/agent/demo_runner.py` (side-by-side terminal demonstration)
+- Scenario REST API: `backend/app/routers/demo.py` (`GET /demo/scenarios` and `POST /demo/run-scenario` for Phase 7 Dashboard integration)
+- Test suite: 40/40 tests passing across `test_health.py` (2), `test_screen.py` (7), `test_rule_engine.py` (9), `test_ml_classifier.py` (4), `test_llm_judge.py` (5), `test_policy_engine.py` (7), and `test_toy_agent.py` (6)
 - `.github/workflows/ci.yml` (installs deps, runs pytest)
 - `Dockerfile`, `.env.example`, `.gitignore`, `LICENSE` (MIT)
 - `policy/policy.example.yaml` (declarative policy rules)
 
 ## In progress
-- Phase 5 complete (awaiting review/merge to `main`). Next: Phase 6.
+- Phase 6 complete (awaiting review/merge to `main`). Next: Phase 7.
 
 ## Not started
-- Phase 6: toy agent + staged attack scenarios
 - Phase 7: React/TypeScript dashboard
 - Phase 8: integration polish, demo rehearsal, pitch deck
