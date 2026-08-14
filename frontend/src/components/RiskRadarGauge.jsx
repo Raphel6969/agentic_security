@@ -1,65 +1,41 @@
 import React from 'react';
 
-export default function RiskRadarGauge({ score = 0.0, size = 180, label = "RISK SCORE" }) {
-  const normalizedScore = Math.max(0.0, Math.min(1.0, score));
-  const radius = (size - 24) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - normalizedScore * circumference;
+export default function RiskRadarGauge({ score = 0.0, size = 160 }) {
+  const s = Math.max(0, Math.min(1, score));
+  const radius = (size - 20) / 2;
+  const circ = 2 * Math.PI * radius;
+  const offset = circ - s * circ;
 
-  let colorClass = "text-[#00F5A0] stroke-[#00F5A0]";
-  let shadowGlow = "shadow-[0_0_20px_rgba(0,245,160,0.3)]";
-  let statusText = "CLEAN / ALLOW";
-
-  if (normalizedScore >= 0.7) {
-    colorClass = "text-[#FF2E55] stroke-[#FF2E55]";
-    shadowGlow = "shadow-[0_0_25px_rgba(255,46,85,0.4)]";
-    statusText = "HARD BLOCK";
-  } else if (normalizedScore >= 0.4) {
-    colorClass = "text-[#FFB800] stroke-[#FFB800]";
-    shadowGlow = "shadow-[0_0_20px_rgba(255,184,0,0.3)]";
-    statusText = "APPROVAL REQ";
-  }
+  let color = '#00FF94';
+  let label = 'CLEAN';
+  if (s >= 0.7) { color = '#FF3D5A'; label = 'BLOCK'; }
+  else if (s >= 0.4) { color = '#F59E0B'; label = 'REVIEW'; }
 
   return (
-    <div className="flex flex-col items-center justify-center relative select-none">
-      <div className={`relative flex items-center justify-center rounded-full p-2 ${shadowGlow} transition-all duration-700`}>
-        <svg width={size} height={size} className="transform -rotate-90">
-          {/* Outer Track Ring */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            className="stroke-white/10"
-            strokeWidth="10"
-            fill="transparent"
-          />
-          {/* Animated Value Arc */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            className={`${colorClass} transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]`}
-            strokeWidth="10"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
+    <div className="flex flex-col items-center gap-2">
+      <div style={{ position: 'relative', width: size, height: size }}>
+        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx={size/2} cy={size/2} r={radius}
+            fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
+          <circle cx={size/2} cy={size/2} r={radius}
+            fill="none" stroke={color} strokeWidth="8"
+            strokeDasharray={circ} strokeDashoffset={offset}
             strokeLinecap="round"
-            fill="transparent"
+            style={{ transition: 'stroke-dashoffset 700ms cubic-bezier(0.32,0.72,0,1), stroke 400ms ease', filter: `drop-shadow(0 0 6px ${color}80)` }}
           />
         </svg>
-
-        {/* Inner Readout Text */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <span className="text-[10px] uppercase tracking-[0.2em] font-mono font-semibold text-slate-400">
-            {label}
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '1.5rem', fontWeight: 700, color, lineHeight: 1, letterSpacing: '-0.02em' }}>
+            {s.toFixed(2)}
           </span>
-          <span className={`text-4xl font-extrabold font-mono tracking-tight my-0.5 ${colorClass}`}>
-            {normalizedScore.toFixed(2)}
-          </span>
-          <span className={`text-[11px] font-bold font-mono px-2 py-0.5 rounded-full bg-black/40 border border-white/10 ${colorClass}`}>
-            {statusText}
+          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.2em', color: 'rgba(240,240,248,0.35)', marginTop: 4, textTransform: 'uppercase' }}>
+            RISK
           </span>
         </div>
       </div>
+      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.65rem', fontWeight: 700, color, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+        {label}
+      </span>
     </div>
   );
 }

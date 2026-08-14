@@ -1,123 +1,82 @@
 import React, { useEffect, useState } from 'react';
-import { Sliders, Save, Check, RefreshCw, AlertCircle, FileCode } from 'lucide-react';
 
 export default function PolicyManager() {
-  const [yamlContent, setYamlContent] = useState('');
+  const [yaml, setYaml] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [statusMessage, setStatusMessage] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(null);
+  const [msg, setMsg] = useState(null); // { type: 'ok'|'err', text }
 
-  const fetchPolicy = async () => {
+  const fetch_ = async () => {
     setLoading(true);
-    setErrorMessage(null);
     try {
-      const response = await fetch('/api/policy');
-      const data = await response.json();
-      setYamlContent(data.raw_yaml || '');
-    } catch (err) {
-      setErrorMessage('Failed to fetch policy.yaml from server.');
-    } finally {
-      setLoading(false);
-    }
+      const res = await fetch('/api/policy');
+      const d = await res.json();
+      setYaml(d.raw_yaml || '');
+    } catch { setMsg({ type: 'err', text: 'Failed to load policy file.' }); }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    fetchPolicy();
-  }, []);
+  useEffect(() => { fetch_(); }, []);
 
-  const handleSave = async () => {
-    setSaving(true);
-    setStatusMessage(null);
-    setErrorMessage(null);
-
+  const save = async () => {
+    setSaving(true); setMsg(null);
     try {
-      const response = await fetch('/api/policy', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ policy_yaml: yamlContent }),
+      const res = await fetch('/api/policy', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ policy_yaml: yaml }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Failed to update policy YAML.');
-      }
-
-      setStatusMessage('✅ Policy updated and reloaded in Policy Engine!');
-    } catch (err) {
-      setErrorMessage(err.message);
-    } finally {
-      setSaving(false);
-    }
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail);
+      setMsg({ type: 'ok', text: 'Policy saved and hot-reloaded.' });
+    } catch (e) {
+      setMsg({ type: 'err', text: e.message });
+    } finally { setSaving(false); }
   };
 
   return (
-    <div className="bezel-shell">
-      <div className="bezel-core space-y-4">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
-          <div className="flex items-center gap-2">
-            <Sliders className="w-5 h-5 text-amber-400" />
-            <div>
-              <h3 className="text-lg font-bold text-white">Declarative Policy Engine Manager</h3>
-              <p className="text-xs text-slate-400">Live editing of policy.yaml tool constraints & path wildcards</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={fetchPolicy}
-              disabled={loading}
-              className="btn-press px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-slate-300 hover:text-white text-xs font-mono flex items-center gap-1.5"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              Reload
-            </button>
-
-            <button
-              onClick={handleSave}
-              disabled={saving || loading}
-              className="btn-press px-5 py-1.5 rounded-lg bg-emerald-500 text-black font-bold text-xs font-mono flex items-center gap-2 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 disabled:opacity-50"
-            >
-              {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              Save & Apply Policy
-            </button>
-          </div>
+    <div className="flex flex-col h-full gap-4 page-enter">
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <p className="section-label">Policy Configuration</p>
+          <p style={{ fontFamily: 'JetBrains Mono', fontSize: '0.65rem', color: 'rgba(240,240,248,0.3)', marginTop: 4 }}>
+            policy/policy.example.yaml — live hot-reload
+          </p>
         </div>
-
-        {statusMessage && (
-          <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-            <span>{statusMessage}</span>
-          </div>
-        )}
-
-        {errorMessage && (
-          <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-mono flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
-        {/* YAML Code Editor */}
-        <div className="relative rounded-xl border border-white/10 bg-black/60 overflow-hidden">
-          <div className="px-4 py-2 bg-white/5 border-b border-white/10 flex items-center justify-between text-xs font-mono text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <FileCode className="w-4 h-4 text-indigo-400" />
-              policy/policy.example.yaml
-            </span>
-            <span>YAML Format</span>
-          </div>
-          <textarea
-            value={yamlContent}
-            onChange={(e) => setYamlContent(e.target.value)}
-            disabled={loading}
-            rows={18}
-            className="w-full bg-transparent p-4 font-mono text-xs text-emerald-400 leading-relaxed focus:outline-none resize-y selection:bg-indigo-500 selection:text-white"
-            placeholder="Loading policy.yaml rules..."
-          />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={fetch_} disabled={loading}
+            style={{ padding: '0.4rem 0.875rem', borderRadius: 7, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'JetBrains Mono', fontSize: '0.65rem', color: 'rgba(240,240,248,0.6)', cursor: 'pointer', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            {loading ? '...' : 'RELOAD'}
+          </button>
+          <button onClick={save} disabled={saving || loading}
+            style={{ padding: '0.4rem 1.25rem', borderRadius: 7, background: '#00FF94', fontFamily: 'JetBrains Mono', fontSize: '0.65rem', color: '#04060F', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', border: 'none', boxShadow: saving ? 'none' : '0 0 16px rgba(0,255,148,0.3)' }}>
+            {saving ? 'SAVING...' : 'SAVE & APPLY'}
+          </button>
         </div>
+      </div>
+
+      {msg && (
+        <div style={{ padding: '0.625rem 1rem', borderRadius: 7, fontFamily: 'JetBrains Mono', fontSize: '0.7rem', background: msg.type === 'ok' ? 'rgba(0,255,148,0.07)' : 'rgba(255,61,90,0.07)', border: `1px solid ${msg.type === 'ok' ? 'rgba(0,255,148,0.2)' : 'rgba(255,61,90,0.2)'}`, color: msg.type === 'ok' ? '#00FF94' : '#FF3D5A' }}>
+          {msg.text}
+        </div>
+      )}
+
+      {/* Editor */}
+      <div style={{ flex: 1, position: 'relative' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '0.5rem 1rem', background: 'rgba(0,0,0,0.5)', borderBottom: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px 8px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF3D5A' }} />
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B' }} />
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00FF94' }} />
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.6rem', color: 'rgba(240,240,248,0.25)', marginLeft: 8, letterSpacing: '0.1em' }}>YAML</span>
+        </div>
+        <textarea
+          className="code-editor"
+          value={yaml}
+          onChange={(e) => setYaml(e.target.value)}
+          disabled={loading}
+          rows={20}
+          style={{ paddingTop: '2.5rem', minHeight: '100%', borderRadius: 8 }}
+        />
       </div>
     </div>
   );

@@ -1,115 +1,82 @@
-import React, { useEffect, useState } from 'react';
-import { Activity, Radio, Shield, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export default function TelemetryFeed() {
   const [events, setEvents] = useState([]);
   const [connected, setConnected] = useState(false);
+  const bottomRef = useRef(null);
 
   useEffect(() => {
-    const eventSource = new EventSource('/api/events/stream');
-
-    eventSource.onopen = () => {
-      setConnected(true);
-    };
-
-    eventSource.onmessage = (e) => {
+    const es = new EventSource('/api/events/stream');
+    es.onopen = () => setConnected(true);
+    es.onmessage = (e) => {
       try {
-        const parsed = JSON.parse(e.data);
-        if (parsed.type === 'CONNECTED') return;
-
-        setEvents((prev) => [
-          {
-            id: Date.now() + Math.random(),
-            timestamp: new Date().toLocaleTimeString(),
-            ...parsed,
-          },
-          ...prev.slice(0, 49), // Keep latest 50
-        ]);
-      } catch (err) {
-        console.error('SSE parse error:', err);
-      }
+        const d = JSON.parse(e.data);
+        if (d.type === 'CONNECTED') return;
+        setEvents((prev) => [{
+          id: Date.now() + Math.random(),
+          ts: new Date().toLocaleTimeString('en-US', { hour12: false }),
+          ...d,
+        }, ...prev.slice(0, 199)]);
+      } catch {}
     };
-
-    eventSource.onerror = (err) => {
-      console.error('SSE Error:', err);
-      setConnected(false);
-    };
-
-    return () => {
-      eventSource.close();
-    };
+    es.onerror = () => setConnected(false);
+    return () => es.close();
   }, []);
 
   return (
-    <div className="bezel-shell">
-      <div className="bezel-core space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
-          <div className="flex items-center gap-2">
-            <Radio className={`w-5 h-5 ${connected ? 'text-emerald-400 animate-pulse' : 'text-slate-500'}`} />
-            <h3 className="text-lg font-bold text-white">Live Telemetry Stream</h3>
-          </div>
-          <div className="flex items-center gap-2 font-mono text-xs">
-            <span className={`w-2.5 h-2.5 rounded-full ${connected ? 'bg-emerald-500 shadow-[0_0_10px_rgba(0,245,160,0.8)]' : 'bg-slate-600'}`} />
-            <span className="text-slate-400">{connected ? 'SSE STREAM ACTIVE' : 'RECONNECTING...'}</span>
-          </div>
+    <div className="flex flex-col h-full page-enter">
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', paddingBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <p className="section-label">Live Event Stream</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{
+            width: 7, height: 7, borderRadius: '50%',
+            background: connected ? '#00FF94' : '#FF3D5A',
+            boxShadow: connected ? '0 0 8px rgba(0,255,148,0.8)' : 'none',
+            animation: connected ? 'pulse-dot 2s ease-in-out infinite' : 'none',
+          }} />
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.6rem', color: 'rgba(240,240,248,0.35)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            {connected ? 'SSE LIVE' : 'OFFLINE'}
+          </span>
         </div>
+      </div>
 
-        {/* Live Stream List */}
-        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-          {events.length === 0 ? (
-            <div className="p-8 text-center text-slate-500 font-mono text-xs flex flex-col items-center justify-center gap-2">
-              <Activity className="w-8 h-8 animate-pulse text-indigo-500/50" />
-              <span>Waiting for live screening events... Trigger an attack scenario to see stream updates.</span>
-            </div>
-          ) : (
-            events.map((evt) => {
-              const isBlock = evt.verdict === 'block';
-              const isApproval = evt.verdict === 'require_approval';
-
-              let borderColor = 'border-emerald-500/30 bg-emerald-950/10';
-              let badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-
-              if (isBlock) {
-                borderColor = 'border-rose-500/30 bg-rose-950/10';
-                badgeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-              } else if (isApproval) {
-                borderColor = 'border-amber-500/30 bg-amber-950/10';
-                badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-              }
-
+      {/* Stream */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {events.length === 0 ? (
+          <div style={{ padding: '3rem 0', textAlign: 'center', fontFamily: 'JetBrains Mono', fontSize: '0.7rem', color: 'rgba(240,240,248,0.2)', letterSpacing: '0.1em' }}>
+            WAITING FOR EVENTS — RUN AN ATTACK SCENARIO
+          </div>
+        ) : (
+          <div>
+            {events.map((ev) => {
+              const isBlock = ev.verdict === 'block';
+              const isApproval = ev.verdict === 'require_approval';
+              const verdictColor = isBlock ? '#FF3D5A' : isApproval ? '#F59E0B' : '#00FF94';
               return (
-                <div
-                  key={evt.id}
-                  className={`p-3.5 rounded-xl border ${borderColor} transition-all duration-300 font-mono text-xs space-y-2`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold border ${badgeColor}`}>
-                        {evt.verdict}
-                      </span>
-                      <span className="text-slate-300 font-bold">{evt.tool_name}</span>
-                      <span className="text-slate-500">agent: {evt.agent_id}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-slate-400">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>{evt.timestamp}</span>
-                    </div>
-                  </div>
-
-                  <div className="text-slate-300 font-sans text-xs">
-                    {evt.explanation}
-                  </div>
-
-                  <div className="flex items-center justify-between text-[11px] pt-1 text-slate-400 border-t border-white/5">
-                    <span>Risk Score: <strong className={isBlock ? 'text-rose-400' : 'text-emerald-400'}>{evt.risk_score?.toFixed(2)}</strong></span>
-                    <span>Source: {evt.incoming_source}</span>
-                  </div>
+                <div key={ev.id} className="feed-row" style={{ animationName: 'fadeSlideIn', animationDuration: '200ms', animationFillMode: 'both' }}>
+                  <span style={{ color: 'rgba(240,240,248,0.25)', minWidth: 64, fontSize: '0.65rem' }}>{ev.ts}</span>
+                  <span className="status-pill" style={{
+                    background: `${verdictColor}12`, color: verdictColor,
+                    border: `1px solid ${verdictColor}30`, minWidth: 62, justifyContent: 'center',
+                  }}>
+                    {ev.verdict}
+                  </span>
+                  <span style={{ color: '#7C3AED', minWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {ev.tool_name}
+                  </span>
+                  <span style={{ color: verdictColor, fontWeight: 700, minWidth: 40 }}>
+                    {ev.risk_score?.toFixed(2)}
+                  </span>
+                  <span style={{ color: 'rgba(240,240,248,0.35)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.65rem' }}>
+                    {ev.agent_id} · {ev.incoming_source}
+                  </span>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
+        <div ref={bottomRef} />
       </div>
     </div>
   );
