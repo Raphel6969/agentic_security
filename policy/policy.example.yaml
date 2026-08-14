@@ -1,0 +1,37 @@
+# policy.example.yaml — reference only (Phase 0).
+# Real enforcement (Policy Engine, is_allowed()) is Phase 5 scope — see
+# PHASE.md. This file shows the intended shape so Phase 5 has a concrete
+# target and API.md's policy_check examples stay consistent with it.
+
+tools:
+  read_email:
+    allowed: true
+    scope: read_only
+    conditions:
+      max_calls_per_session: 20
+
+  write_file:
+    allowed: true
+    scope: restricted
+    conditions:
+      allowed_paths:
+        - "/sandbox/**"
+      max_calls_per_session: 5
+
+  call_http:
+    allowed: true
+    scope: restricted
+    conditions:
+      allowed_domains:
+        - "api.example-sandbox.com"
+      max_calls_per_session: 10
+
+  send_email:
+    allowed: true
+    scope: requires_approval
+    conditions:
+      max_calls_per_session: 3
+
+default:
+  allowed: false
+  reason: "Tool not declared in policy — deny by default."
