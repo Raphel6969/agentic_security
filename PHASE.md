@@ -59,13 +59,18 @@ TurboQuant-compressed vector index (`ARCHITECTURE.md`).
 - [x] Test suite (`tests/test_ml_classifier.py`) passing (4 tests, 22/22 total).
 
 
-### Phase 4 — LLM-judge — `phase-4-llm-judge` — ⬜ not started
+### Phase 4 — LLM-judge — `phase-4-llm-judge` — ✅ complete
 
 **Scope:** Groq client, strict JSON schema, escalation-trigger logic
 (Stage 1/2 confidence delta).
 
-**Exit criteria:** Ambiguous cases correctly escalate and return valid
-structured verdicts; documented fallback behaviour if Groq is unreachable.
+**Exit criteria:**
+- [x] Groq LLM-Judge service implemented in `app/services/llm_judge.py` using `llama-3.1-8b-instant`.
+- [x] Selective escalation trigger (`should_escalate_to_judge`) implemented (ambiguous band `0.30 <= max_score < 0.70` or stage delta `>= 0.40`).
+- [x] Resilient fallback behaviour documented & implemented (falls back to Stage 1/2 score if `GROQ_API_KEY` missing or API times out).
+- [x] Integrated into 3-stage Verdict Fusion in `POST /screen` router (`app/routers/screen.py`).
+- [x] Unit and integration test suite (`tests/test_llm_judge.py`) passing (5 tests, 27/27 total).
+
 
 ### Phase 5 — Policy engine — `phase-5-policy-engine` — ⬜ not started
 

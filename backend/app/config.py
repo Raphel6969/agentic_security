@@ -15,7 +15,13 @@ class Settings:
     version: str = "0.1.0"
     environment: str = os.getenv("ENVIRONMENT", "development")
 
+    # Phase 4 — Groq LLM-Judge settings
+    groq_api_key: str = os.getenv("GROQ_API_KEY", "")
+    groq_model: str = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+    groq_timeout_seconds: float = float(os.getenv("GROQ_TIMEOUT_SECONDS", "3.0"))
+
 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+

@@ -111,5 +111,26 @@ confirmed. Human sign-off is still required before opening Phase 1 per
 
 **Verification (this session):** Ran full pytest suite (`pytest`, 22/22 passed in 17.92s). Benign inputs yield score `<0.40`, while semantic paraphrase attacks trigger Stage 2 `high_similarity_to_known_injection` matches with similarity `>= 0.45`.
 
+---
+
+## Phase 4 — LLM-Judge Layer (Stage 3 Detection)
+
+**What was built:** Added `groq_api_key`, `groq_model`, `groq_timeout_seconds` in `app/config.py`. Implemented Stage 3 LLM-Judge service (`app/services/llm_judge.py`) using Groq API (`llama-3.1-8b-instant`), selective escalation logic (`should_escalate_to_judge`), strict JSON system prompt, and fallback handling. Integrated Stage 3 into 3-stage Verdict Fusion in `POST /screen` router (`app/routers/screen.py`). Added unit & integration test suite (`tests/test_llm_judge.py`).
+
+**What's left in this phase:** None. Phase 4 exit criteria met.
+
+**Technical decisions made, and why:**
+- Selected `llama-3.1-8b-instant` via Groq API for ultra-fast (~150ms) inference when Stage 3 escalation is triggered.
+- Defined selective escalation criteria: triggers only if Stage 1/2 max risk score lands in the ambiguous band (`0.30 <= max_score < 0.70`) or when there is high stage disagreement (`abs(rule - ml) >= 0.40`). This avoids unnecessary LLM API calls on obvious passes or obvious hard blocks.
+- Enforced strict JSON response format in the system prompt (`is_threat`, `risk_score`, `signal`, `reasoning`).
+- Designed resilient fallback: if `GROQ_API_KEY` is omitted, API times out (>3.0s), or returns an error, the system logs a warning and falls back gracefully to `max(rule_score, ml_score)` without crashing the `/screen` endpoint.
+
+**Deferred to later phases:**
+- Policy Engine enforcement (Phase 5).
+- Toy Agent & attack scenario wiring (Phase 6).
+
+**Verification (this session):** Ran full backend test suite (`pytest`, 27/27 passed in 43.92s). Mocked Groq responses, timeouts, API key omission, escalation logic, and `/screen` integration all verified.
+
+
 
 
