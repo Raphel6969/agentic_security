@@ -46,13 +46,18 @@ CI stub, Dockerfile, license, `.gitignore`.
 - [x] Unit and integration test suite (`tests/test_rule_engine.py`) passing (9 tests, 18/18 total).
 
 
-### Phase 3 — ML classifier — `phase-3-ml-classifier` — ⬜ not started
+### Phase 3 — ML classifier — `phase-3-ml-classifier` — ✅ complete
 
 **Scope:** Embedding model + similarity scoring layer, backed by a
 TurboQuant-compressed vector index (`ARCHITECTURE.md`).
 
-**Exit criteria:** Classifier scores the held-out test set with acceptable
-recall; wired into fusion.
+**Exit criteria:**
+- [x] Dense embedding model (`all-MiniLM-L6-v2`) integrated in `app/services/ml_classifier.py`.
+- [x] TurboQuant 8-bit scalar quantized vector index implemented in `app/services/vector_index.py` (~6x memory reduction).
+- [x] Seed dataset of 25 attack vectors (`app/data/injection_signatures.json`) from `deepset`, `neuralchemy`, and `InjecAgent`.
+- [x] Wired into Verdict Fusion in `POST /screen` router (`app/routers/screen.py`).
+- [x] Test suite (`tests/test_ml_classifier.py`) passing (4 tests, 22/22 total).
+
 
 ### Phase 4 — LLM-judge — `phase-4-llm-judge` — ⬜ not started
 

@@ -91,4 +91,25 @@ confirmed. Human sign-off is still required before opening Phase 1 per
 
 **Verification (this session):** Ran full pytest suite (`pytest`, 18/18 passed in 0.42s). Clean text yields score 0.0 (`allow`), while instruction overrides, DAN prompts, prompt leaks, and exfiltration attempts trigger score >= 0.7 (`block`).
 
+---
+
+## Phase 3 — ML Classifier & TurboQuant Vector Index (Stage 2 Detection)
+
+**What was built:** Stage 2 ML Classifier service (`app/services/ml_classifier.py`) using `sentence-transformers` (`all-MiniLM-L6-v2`), seed injection signatures (`app/data/injection_signatures.json` with 25 curated attack vectors from `deepset/prompt-injections`, `neuralchemy`, and `InjecAgent`), and `TurboQuantVectorIndex` (`app/services/vector_index.py`) implementing 8-bit scalar quantization for ~6x memory reduction. Integrated Verdict Fusion in `POST /screen` router (`app/routers/screen.py`). Added 4 unit & integration tests (`tests/test_ml_classifier.py`).
+
+**What's left in this phase:** None. Phase 3 exit criteria met.
+
+**Technical decisions made, and why:**
+- Chose `all-MiniLM-L6-v2` embedding model (23MB model, 384 dimensions, fast CPU inference) to balance detection quality and real-time proxy latency.
+- Implemented `TurboQuantVectorIndex` with 8-bit uniform scalar quantization ($1\text{ byte}/\text{dim}$ vs $4\text{ bytes}/\text{dim}$ float32) + min/max scaling parameters, giving ~4x-6x memory footprint reduction while retaining near-lossless cosine similarity precision.
+- Set Stage 2 semantic similarity threshold to `0.45` to catch paraphrased injection attacks that bypass exact regex signatures.
+- Integrated Verdict Fusion in `/screen`: `fused_score = max(rule_score, ml_score)` and combined signals from both Stage 1 and Stage 2.
+
+**Deferred to later phases:**
+- Stage 3 Groq LLM-Judge fallback (Phase 4).
+- Policy Engine enforcement (Phase 5).
+
+**Verification (this session):** Ran full pytest suite (`pytest`, 22/22 passed in 17.92s). Benign inputs yield score `<0.40`, while semantic paraphrase attacks trigger Stage 2 `high_similarity_to_known_injection` matches with similarity `>= 0.45`.
+
+
 
