@@ -131,6 +131,27 @@ confirmed. Human sign-off is still required before opening Phase 1 per
 
 **Verification (this session):** Ran full backend test suite (`pytest`, 27/27 passed in 43.92s). Mocked Groq responses, timeouts, API key omission, escalation logic, and `/screen` integration all verified.
 
+---
+
+## Phase 5 — Policy Engine & SQLite Hot Storage
+
+**What was built:** Added `PyYAML` and `SQLAlchemy` dependencies. Created database package (`app/db/session.py`, `app/db/models.py`) managing SQLite hot storage (`sentinel.db`) for `SessionCallCountDB` and `ScreenEventDB`. Built `PolicyEngineService` (`app/services/policy_engine.py`) loading `policy.yaml`, enforcing path wildcards (`allowed_paths`), domain restrictions (`allowed_domains`), default deny for undeclared tools, and session invocation counts. Integrated Policy Engine into `POST /screen` router (`app/routers/screen.py`) with **Hard Policy Block** enforcement (policy violations forced to `BLOCK` independent of `risk_score`) and audit logging. Added 7 unit & integration tests (`tests/test_policy_engine.py`).
+
+**What's left in this phase:** None. Phase 5 exit criteria met.
+
+**Technical decisions made, and why:**
+- **Hot & Cold Storage Architecture**: Adopted SQLite (`sentinel.db`) as the high-speed **Hot Storage** layer for active session call counters and real-time screen event logs. Abstracted data models to enable batch export to **Cold Storage** (PostgreSQL) when cold storage infrastructure is connected.
+- **Declarative Policy Loading**: Loaded rules from `policy.yaml` with wildcard glob matching (`fnmatch`) for file paths (e.g. `/sandbox/**`) and domain name parsing for URL parameters.
+- **Hard Policy Block**: Enforced rule that a policy violation (`policy_check.allowed == False`) immediately forces a `BLOCK` verdict, even if the 3-stage threat detection cascade yielded `risk_score == 0.0`.
+- **Audit Logging**: Persisted every `/screen` call detail (agent_id, session_id, tool_name, risk_score, verdict, explanation, matched_signals, policy_check) to `ScreenEventDB` in SQLite hot storage.
+
+**Deferred to later phases:**
+- Toy Agent & attack scenario wiring (Phase 6).
+- Cold Storage batch push sync to PostgreSQL (Phase 7+).
+
+**Verification (this session):** Ran full backend test suite (`pytest`, 34/34 passed in 42.39s). Path restrictions, domain restrictions, max session call limits, default deny, and hard block overrides in `/screen` all verified.
+
+
 
 
 

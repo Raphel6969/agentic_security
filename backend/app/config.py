@@ -20,8 +20,13 @@ class Settings:
     groq_model: str = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
     groq_timeout_seconds: float = float(os.getenv("GROQ_TIMEOUT_SECONDS", "3.0"))
 
+    # Phase 5 — Policy Engine & SQLite Hot Storage settings
+    policy_file_path: str = os.getenv("POLICY_FILE_PATH", "policy/policy.example.yaml")
+    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./sentinel.db")
+
 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
 

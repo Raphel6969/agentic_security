@@ -72,12 +72,17 @@ TurboQuant-compressed vector index (`ARCHITECTURE.md`).
 - [x] Unit and integration test suite (`tests/test_llm_judge.py`) passing (5 tests, 27/27 total).
 
 
-### Phase 5 — Policy engine — `phase-5-policy-engine` — ⬜ not started
+### Phase 5 — Policy engine — `phase-5-policy-engine` — ✅ complete
 
-**Scope:** `policy.yaml` format + `is_allowed()` enforcement.
+**Scope:** `policy.yaml` format + `evaluate_policy()` enforcement + SQLite Hot Storage.
 
-**Exit criteria:** Over-scope calls hard-blocked independent of
-`risk_score`.
+**Exit criteria:**
+- [x] Policy Engine service implemented in `app/services/policy_engine.py` loading `policy.yaml`.
+- [x] SQLite Hot Storage layer (`app/db/session.py`, `app/db/models.py`) implemented for active session call counters and real-time screen event logs (`ScreenEventDB`).
+- [x] Path restrictions (`allowed_paths`), domain restrictions (`allowed_domains`), default deny, and max session call limits enforced.
+- [x] Hard Policy Block integrated into `POST /screen` router (`app/routers/screen.py`) forcing `verdict = "block"` independent of `risk_score`.
+- [x] Unit and integration test suite (`tests/test_policy_engine.py`) passing (7 tests, 34/34 total).
+
 
 ### Phase 6 — Toy agent — `phase-6-toy-agent` — ⬜ not started
 

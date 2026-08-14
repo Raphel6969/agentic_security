@@ -77,9 +77,10 @@ def test_screen_minimal_valid_request():
     payload = {
         "agent_context": {"agent_id": "a1", "session_id": "s1"},
         "incoming_content": {"source": "system", "text": "system init"},
-        "proposed_tool_call": {"tool_name": "init"},
+        "proposed_tool_call": {"tool_name": "read_email"},
     }
     response = client.post("/screen", json=payload)
     assert response.status_code == 200
     data = response.json()
     assert data["verdict"] == "allow"
+

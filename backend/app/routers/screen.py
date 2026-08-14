@@ -1,16 +1,22 @@
 """
 /screen router for Sentinel Layer.
 
-Phase 4 scope: 3-stage detection cascade (Stage 1 Rule Engine, Stage 2 ML Classifier,
-and Stage 3 Groq LLM-Judge) integrated into Verdict Fusion.
+Phase 5 scope: 3-stage detection cascade + Policy Engine authorization & SQLite Hot Storage audit logging.
+Hard policy violations force a 'block' verdict independent of risk_score.
 """
+import json
+import logging
 from fastapi import APIRouter
 
-from app.models import PolicyCheck, ScreenRequest, ScreenResponse, VerdictType
+from app.db.models import ScreenEventDB
+from app.db.session import SessionLocal
+from app.models import ScreenRequest, ScreenResponse, VerdictType
 from app.services.llm_judge import evaluate_llm_judge, should_escalate_to_judge
 from app.services.ml_classifier import evaluate_ml
+from app.services.policy_engine import evaluate_policy
 from app.services.rule_engine import evaluate_rules
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["screening"])
 
 
@@ -18,10 +24,11 @@ router = APIRouter(tags=["screening"])
 async def screen_content(request: ScreenRequest) -> ScreenResponse:
     """
     Screen incoming context, content, and proposed tool calls through Sentinel Layer.
-    Interprets 3-stage detection cascade signals (Rule, ML Vector Index, LLM-Judge).
+    Combines 3-stage threat detection cascade with declarative Policy Engine authorization.
     """
     text = request.incoming_content.text
     agent_id = request.agent_context.agent_id
+    session_id = request.agent_context.session_id
     tool_name = request.proposed_tool_call.tool_name
 
     # ── Stage 1: Rule Engine Evaluation ──────────────────────────────────────
@@ -79,12 +86,41 @@ async def screen_content(request: ScreenRequest) -> ScreenResponse:
             f"Verdict: ALLOW (Risk Score: {risk_score:.2f})."
         )
 
-    # Policy Check stub (Policy Engine lands in Phase 5)
-    policy_check = PolicyCheck(
-        tool_name=tool_name,
-        allowed=True,
-        reason="Phase 4: policy engine not yet active.",
-    )
+    # ── Policy Engine Evaluation & Hard Enforcement ───────────────────────────
+    policy_check = evaluate_policy(request.proposed_tool_call, request.agent_context)
+
+    # Hard Policy Override: Policy violation forces BLOCK independent of risk_score
+    if not policy_check.allowed:
+        verdict = "block"
+        explanation = (
+            f"{explanation} Hard Policy Violation: {policy_check.reason} "
+            "Verdict forced to BLOCK."
+        )
+    elif "requires_approval" in policy_check.reason and verdict != "block":
+        verdict = "require_approval"
+        explanation += " Policy scope requires operator approval before execution."
+
+
+    # ── SQLite Hot Storage Audit Logging ──────────────────────────────────────
+    try:
+        signals_json = json.dumps([s.model_dump() for s in matched_signals])
+        with SessionLocal() as db:
+            event_row = ScreenEventDB(
+                agent_id=agent_id,
+                session_id=session_id,
+                tool_name=tool_name,
+                incoming_source=request.incoming_content.source,
+                risk_score=risk_score,
+                verdict=verdict,
+                explanation=explanation,
+                matched_signals_json=signals_json,
+                policy_allowed=policy_check.allowed,
+                policy_reason=policy_check.reason,
+            )
+            db.add(event_row)
+            db.commit()
+    except Exception as err:
+        logger.warning("Failed to log screen event to SQLite hot storage: %s", err)
 
     return ScreenResponse(
         risk_score=risk_score,
