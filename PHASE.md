@@ -9,7 +9,7 @@ explicit human sign-off before the next phase begins.
 
 ---
 
-### Phase 0 — Setup — `phase-0-setup` — 🟨 in progress (awaiting sign-off)
+### Phase 0 — Setup — `phase-0-setup` — ✅ complete
 
 **Scope:** Repo scaffold, all governance docs (this set), empty FastAPI app,
 CI stub, Dockerfile, license, `.gitignore`.
@@ -20,16 +20,20 @@ CI stub, Dockerfile, license, `.gitignore`.
 - [x] `docs/decisions.md` and `docs/status.md` initialised
 - [x] App boots locally
 - [x] `/health` endpoint returns `200`
-- [x] CI configured to run pytest on every PR (not yet run in a real PR — verified locally: 2/2 tests pass)
-- [ ] Human lead has reviewed and approved the scaffold before Phase 1 begins
+- [x] CI configured to run pytest on every PR (verified locally: 2/2 tests pass)
+- [x] Human lead has reviewed and approved the scaffold before Phase 1 begins
 
-### Phase 1 — `/screen` skeleton — `phase-1-screen-endpoint` — ⬜ not started
+### Phase 1 — `/screen` skeleton — `phase-1-screen-endpoint` — ✅ complete
 
 **Scope:** `/screen` endpoint with full Pydantic request/response schema
 (per `API.md`), returning a stubbed verdict.
 
-**Exit criteria:** Endpoint accepts the full request shape and returns a
-well-formed (stubbed) response matching `API.md` exactly.
+**Exit criteria:**
+- [x] Endpoint accepts the full request shape and returns a well-formed (stubbed) response matching `API.md` exactly.
+- [x] Full Pydantic v2 schemas defined in `app/models.py`.
+- [x] Router included in FastAPI app (`app/main.py`).
+- [x] Unit test suite (`tests/test_screen.py`) passing (7 tests).
+
 
 ### Phase 2 — Rule engine — `phase-2-rule-engine` — ⬜ not started
 

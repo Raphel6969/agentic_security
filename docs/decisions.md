@@ -48,3 +48,25 @@ confirming `GET /health` returns `{"status": "ok", "version": "0.1.0"}` —
 both Phase 0 exit criteria that were previously unchecked are now
 confirmed. Human sign-off is still required before opening Phase 1 per
 `RULE.md` Section C.
+
+---
+
+## Phase 1 — `/screen` Skeleton
+
+**What was built:** Pydantic v2 schemas (`app/models.py`), `/screen` API router (`app/routers/screen.py`) returning a stubbed response, included router in `app/main.py`, and a 7-test suite (`tests/test_screen.py`) checking schema validation and HTTP status codes.
+
+**What's left in this phase:** None. Phase 1 exit criteria met.
+
+**Technical decisions made, and why:**
+- Created a separate `app/models.py` for request and response models to serve as the single source of truth for schema validation across backend services.
+- Introduced `app/routers/` modular package structure to keep `main.py` clean as new endpoints and cascade layers land in future phases.
+- Stub response returns `verdict="allow"`, `risk_score=0.0`, and permissive `policy_check` as a safe development default until detection engines land.
+
+**Deferred to later phases:**
+- Stage 1 Rule Engine scoring (Phase 2).
+- Stage 2 ML Classifier & TurboQuant Vector Index scoring (Phase 3).
+- Stage 3 Groq LLM-Judge fallback (Phase 4).
+- Policy Engine enforcement (Phase 5).
+
+**Verification (this session):** Ran full pytest suite (`pytest`, 9/9 passed in 0.42s). All schema edge cases, enums, and required fields validated.
+
