@@ -11,17 +11,17 @@ minute — see `RULE.md` Section D.
 - Repo scaffold: `backend/app/main.py` (FastAPI app + `/health` + `/screen`),
   `backend/app/config.py`, `backend/requirements.txt`
 - Pydantic v2 schemas: `backend/app/models.py` matching `API.md`
-- `/screen` router: `backend/app/routers/screen.py` returning stubbed response
-- Test suite: `backend/tests/test_health.py` (2 tests) + `backend/tests/test_screen.py` (7 tests), 9/9 passing
+- `/screen` router: `backend/app/routers/screen.py`
+- Stage 1 Rule Engine: `backend/app/services/rule_engine.py` (18 signatures covering instruction overrides, DAN jailbreaks, system prompt leaks, delimiter injections, exfiltration)
+- Test suite: 18/18 tests passing across `test_health.py` (2), `test_screen.py` (7), and `test_rule_engine.py` (9)
 - `.github/workflows/ci.yml` (installs deps, runs pytest)
 - `Dockerfile`, `.env.example`, `.gitignore`, `LICENSE` (MIT)
 - `policy/policy.example.yaml` (reference only, not yet enforced)
 
 ## In progress
-- Phase 1 complete (awaiting review/merge to `main`). Next: Phase 2.
+- Phase 2 complete (awaiting review/merge to `main`). Next: Phase 3.
 
 ## Not started
-- Phase 2: rule/heuristic detection engine
 - Phase 3: ML classifier + TurboQuant-compressed vector index
 - Phase 4: Groq-backed LLM-judge layer
 - Phase 5: policy engine enforcement

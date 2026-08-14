@@ -70,3 +70,25 @@ confirmed. Human sign-off is still required before opening Phase 1 per
 
 **Verification (this session):** Ran full pytest suite (`pytest`, 9/9 passed in 0.42s). All schema edge cases, enums, and required fields validated.
 
+---
+
+## Phase 2 — Rule Engine (Stage 1 Detection)
+
+**What was built:** Stage 1 Rule Engine service (`app/services/rule_engine.py`) with 18 high-confidence prompt injection, jailbreak, system prompt extraction, tag/delimiter injection, and exfiltration regex patterns. Integrated into `POST /screen` router (`app/routers/screen.py`). Added 9 new unit & integration tests (`tests/test_rule_engine.py`).
+
+**What's left in this phase:** None. Phase 2 exit criteria met.
+
+**Technical decisions made, and why:**
+- Built `evaluate_rules` as a stateless, pure function (<5ms runtime) executing pre-compiled regex signatures.
+- Used probabilistic OR formula `1 - prod(1 - w_i)` for risk score aggregation when multiple signatures match, bounding scores smoothly in `[0.0, 1.0]`.
+- Mapped risk score bands to verdicts: `risk_score >= 0.7` -> `block`, `0.4 <= risk_score < 0.7` -> `require_approval`, `< 0.4` -> `allow`.
+- Provided plain-language explanation listing matched signature names to fulfill the project's core explainability requirement.
+
+**Deferred to later phases:**
+- Stage 2 ML Classifier & TurboQuant Vector Index (Phase 3).
+- Stage 3 Groq LLM-Judge fallback (Phase 4).
+- Policy Engine enforcement (Phase 5).
+
+**Verification (this session):** Ran full pytest suite (`pytest`, 18/18 passed in 0.42s). Clean text yields score 0.0 (`allow`), while instruction overrides, DAN prompts, prompt leaks, and exfiltration attempts trigger score >= 0.7 (`block`).
+
+

@@ -35,12 +35,16 @@ CI stub, Dockerfile, license, `.gitignore`.
 - [x] Unit test suite (`tests/test_screen.py`) passing (7 tests).
 
 
-### Phase 2 — Rule engine — `phase-2-rule-engine` — ⬜ not started
+### Phase 2 — Rule engine — `phase-2-rule-engine` — ✅ complete
 
 **Scope:** Signature list + regex/keyword scoring, wired into `/screen`.
 
-**Exit criteria:** 15–20 known injection patterns correctly flagged; unit
-tests passing.
+**Exit criteria:**
+- [x] 18 high-confidence prompt injection and jailbreak signatures implemented in `app/services/rule_engine.py`.
+- [x] Fast (<5ms) stateless scanner with probabilistic score accumulation.
+- [x] Integrated into `POST /screen` router (`app/routers/screen.py`).
+- [x] Unit and integration test suite (`tests/test_rule_engine.py`) passing (9 tests, 18/18 total).
+
 
 ### Phase 3 — ML classifier — `phase-3-ml-classifier` — ⬜ not started
 
