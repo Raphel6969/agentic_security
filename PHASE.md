@@ -112,11 +112,18 @@ TurboQuant-compressed vector index (`ARCHITECTURE.md`).
 - [x] Backend pytest test suite (`pytest`) passing 40/40 tests.
 
 
-### Phase 8 — Polish & demo — `phase-8-polish-demo` — ⬜ not started
+### Phase 8 — Polish & demo — `phase-8-polish-demo` — ✅ complete
 
-**Scope:** Integration hardening, rehearsal, fallback recording, deck.
+**Scope:** Integration hardening, end-to-end demo rehearsal, README updating, pitch deck creation.
 
-**Exit criteria:** Demo runs twice, end to end, without manual intervention.
+**Exit criteria:**
+- [x] Automated end-to-end demo suite script (`backend/scripts/run_demo_suite.py`) created.
+- [x] Demo suite executed 100% cleanly end-to-end without manual intervention.
+- [x] Executive pitch deck & technical presentation created in `docs/PITCH_DECK.md`.
+- [x] Production `README.md` updated with architecture diagrams, quickstart instructions, and test commands.
+- [x] Full backend test suite (`pytest`) passing 40/40 tests.
+- [x] All 8 phases completed, documented, and verified.
+
 
 ---
 

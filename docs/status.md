@@ -4,10 +4,12 @@ Rewritten (not appended) after every phase. This file alone should let a
 new contributor or AI agent understand the entire project state in under a
 minute — see `RULE.md` Section D.
 
-## Built
+## Built (100% Complete — All 8 Phases Delivered)
 - Full governance documentation set (README, RULE, AGENT, COLLABORATION,
   ARCHITECTURE, PHASE, API, SECURITY, CONTRIBUTING, CHANGELOG)
 - `docs/decisions.md` and `docs/status.md` (this file)
+- Executive Pitch Deck & Presentation: `docs/PITCH_DECK.md`
+- Automated End-to-End Demo Suite: `backend/scripts/run_demo_suite.py`
 - Repo scaffold: `backend/app/main.py` (FastAPI app + `/health` + `/screen` + `/demo` + `/events` + `/policy` + CORS),
   `backend/app/config.py`, `backend/requirements.txt`
 - Pydantic v2 schemas: `backend/app/models.py` matching `API.md`
@@ -30,7 +32,7 @@ minute — see `RULE.md` Section D.
 - `policy/policy.example.yaml` (declarative policy rules)
 
 ## In progress
-- Phase 7 complete (awaiting review/merge to `main`). Next: Phase 8.
+- None (All 8 phases complete and verified).
 
 ## Not started
-- Phase 8: integration polish, demo rehearsal, pitch deck
+- Future milestones: PostgreSQL cold storage exporter, eBPF kernel interception.

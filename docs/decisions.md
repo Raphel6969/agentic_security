@@ -197,6 +197,26 @@ confirmed. Human sign-off is still required before opening Phase 1 per
 - Backend pytest test suite passed **40/40 tests** in 23.58s.
 - Frontend Vite production build (`npm run build`) succeeded in 24.30s transforming 1577 modules with 0 errors.
 
+---
+
+## Phase 8 — Integration Polish, End-to-End Demo Rehearsal & Pitch Deck
+
+**What was built:**
+- **Automated Demo Verification Suite** (`backend/scripts/run_demo_suite.py`): End-to-end Python script executing all 3 attack scenarios against `TestClient(app)`, validating 3-stage cascade interception, policy engine blocks, and SQLite hot storage audit logs.
+- **Executive Pitch Deck & Technical Presentation** (`docs/PITCH_DECK.md`): Structured presentation deck covering the problem space (Autonomous Agent Risks), technical architecture (3-Stage Cascade + TurboQuant Vector Index + Groq LLM-Judge + Declarative Policy Engine + SQLite Hot / Postgres Cold Storage), live attack benchmarks, and business value.
+- **Production README** (`README.md`): Updated system guide with architecture diagrams, quickstart commands, and API reference links.
+
+**What's left in this phase:** None. All 8 phases of Sentinel Layer are 100% complete!
+
+**Technical decisions made, and why:**
+- **Automated End-to-End Verification**: Created `run_demo_suite.py` to guarantee that the full multi-stage cascade and policy engine execute reliably end-to-end without manual intervention.
+- **Comprehensive Documentation**: Updated `README.md` and `docs/PITCH_DECK.md` to serve as both developer onboarding material and technical investor pitch.
+
+**Verification (this session):**
+- Ran `python -m scripts.run_demo_suite` — **100% Passed End-to-End without errors**.
+- Ran `pytest` — **40/40 tests passed** in 36.73s.
+
+
 
 
 
