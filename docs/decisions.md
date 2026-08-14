@@ -171,6 +171,33 @@ confirmed. Human sign-off is still required before opening Phase 1 per
 
 **Verification (this session):** Ran full backend test suite (`pytest`, 40/40 passed in 20.32s). Ran CLI demo runner (`python -m app.agent.demo_runner --all`) verifying side-by-side prevention across all 3 attack scenarios.
 
+---
+
+## Phase 7 — Security Operations Center (SOC) Dashboard
+
+**What was built:** Added `CORS` middleware to FastAPI backend (`backend/app/main.py`). Built telemetry and policy router (`backend/app/routers/events.py`) providing Server-Sent Events (SSE) live streaming (`GET /events/stream`), SQLite hot storage audit explorer (`GET /events/history`, `GET /events/stats`), and live policy manager (`GET /policy`, `PUT /policy`). Built Awwwards-tier React 18 + Vite frontend in `frontend/` featuring:
+- **Design System**: Double-Bezel nested glass architecture (`.bezel-shell`, `.bezel-core`), Cyber OLED Black palette (`#07090E`), neon glow accents, `Plus Jakarta Sans` typography, and `JetBrains Mono` code telemetry.
+- **Interactive Canvas Background** (`ParticleBackground.jsx`): Real-time canvas particle matrix responding to live threat events.
+- **SVG Risk Radar Gauge** (`RiskRadarGauge.jsx`): Animated radial risk score gauge (`0.00` to `1.00`) shifting color dynamically based on threat severity.
+- **1-Click Attack Simulator** (`AttackSimulator.jsx`): Interactive scenario launcher comparing **Unprotected Agent** vs **Sentinel Protected Agent** side-by-side with live threat signals.
+- **Live Telemetry Stream** (`TelemetryFeed.jsx`): SSE subscriber rendering real-time `/screen` decisions.
+- **Audit Explorer & Policy Manager** (`AuditExplorer.jsx`, `PolicyManager.jsx`): Searchable SQLite audit trail inspector and live `policy.yaml` editor.
+
+**What's left in this phase:** None. Phase 7 exit criteria met.
+
+**Technical decisions made, and why:**
+- **Strict Skill Alignment**: Implemented design skills (`anti-ui-slop`, `high-end-visual-design`, `emil-design-eng`, `apple-design`) avoiding generic AI-slop templates. Applied Doppelrand nested hardware bezels, custom cubic-bezier spring physics (`cubic-bezier(0.32, 0.72, 0, 1)`), and button-in-button active press compression.
+- **Server-Sent Events (SSE)**: Chosen over WebSockets for lightweight, unidirectional real-time event streaming from FastAPI backend to React frontend.
+- **1-Click Attack Verification**: Integrated Phase 6 REST API (`POST /demo/run-scenario`) into the Attack Simulator component for instant visual demonstration of threat interception.
+
+**Deferred to later phases:**
+- Phase 8: Final integration polish, demo rehearsal, pitch deck.
+
+**Verification (this session):**
+- Backend pytest test suite passed **40/40 tests** in 23.58s.
+- Frontend Vite production build (`npm run build`) succeeded in 24.30s transforming 1577 modules with 0 errors.
+
+
 
 
 

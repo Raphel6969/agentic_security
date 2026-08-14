@@ -101,7 +101,7 @@ async def screen_content(request: ScreenRequest) -> ScreenResponse:
         explanation += " Policy scope requires operator approval before execution."
 
 
-    # ── SQLite Hot Storage Audit Logging ──────────────────────────────────────
+    # ── SQLite Hot Storage Audit Logging & SSE Telemetry Broadcast ────────────
     try:
         signals_json = json.dumps([s.model_dump() for s in matched_signals])
         with SessionLocal() as db:
@@ -119,6 +119,21 @@ async def screen_content(request: ScreenRequest) -> ScreenResponse:
             )
             db.add(event_row)
             db.commit()
+
+        # Broadcast SSE live stream event
+        from app.routers.events import broadcast_event
+        broadcast_event({
+            "type": "SCREEN_DECISION",
+            "agent_id": agent_id,
+            "session_id": session_id,
+            "tool_name": tool_name,
+            "incoming_source": request.incoming_content.source,
+            "risk_score": risk_score,
+            "verdict": verdict,
+            "explanation": explanation,
+            "matched_signals": [s.model_dump() for s in matched_signals],
+            "policy_check": policy_check.model_dump(),
+        })
     except Exception as err:
         logger.warning("Failed to log screen event to SQLite hot storage: %s", err)
 
@@ -129,3 +144,4 @@ async def screen_content(request: ScreenRequest) -> ScreenResponse:
         explanation=explanation,
         policy_check=policy_check,
     )
+

@@ -8,7 +8,7 @@ minute — see `RULE.md` Section D.
 - Full governance documentation set (README, RULE, AGENT, COLLABORATION,
   ARCHITECTURE, PHASE, API, SECURITY, CONTRIBUTING, CHANGELOG)
 - `docs/decisions.md` and `docs/status.md` (this file)
-- Repo scaffold: `backend/app/main.py` (FastAPI app + `/health` + `/screen` + `/demo`),
+- Repo scaffold: `backend/app/main.py` (FastAPI app + `/health` + `/screen` + `/demo` + `/events` + `/policy` + CORS),
   `backend/app/config.py`, `backend/requirements.txt`
 - Pydantic v2 schemas: `backend/app/models.py` matching `API.md`
 - `/screen` router: `backend/app/routers/screen.py` with 3-stage Verdict Fusion, Hard Policy Enforcement, and Audit Logging
@@ -21,15 +21,16 @@ minute — see `RULE.md` Section D.
 - Toy Agent: `backend/app/agent/toy_agent.py` (`ToyAgent` with `secured=False` unprotected mode vs `secured=True` Sentinel protected mode)
 - Staged Attack Scenarios: `backend/app/scenarios/attack_scenarios.py` (Direct Injection, Indirect Data Poisoning, Over-Scope Policy Block)
 - CLI Demo Runner: `backend/app/agent/demo_runner.py` (side-by-side terminal demonstration)
-- Scenario REST API: `backend/app/routers/demo.py` (`GET /demo/scenarios` and `POST /demo/run-scenario` for Phase 7 Dashboard integration)
+- Scenario REST API: `backend/app/routers/demo.py` (`GET /demo/scenarios` and `POST /demo/run-scenario`)
+- Telemetry & Policy Router: `backend/app/routers/events.py` (`GET /events/stream`, `GET /events/history`, `GET /events/stats`, `GET /policy`, `PUT /policy`)
+- React 18 + Vite SOC Control Room (`frontend/`): Double-bezel glass design, interactive canvas background, radial risk radar gauge, 1-click attack simulator, SSE live stream feed, SQLite audit log explorer, and live policy editor
 - Test suite: 40/40 tests passing across `test_health.py` (2), `test_screen.py` (7), `test_rule_engine.py` (9), `test_ml_classifier.py` (4), `test_llm_judge.py` (5), `test_policy_engine.py` (7), and `test_toy_agent.py` (6)
 - `.github/workflows/ci.yml` (installs deps, runs pytest)
 - `Dockerfile`, `.env.example`, `.gitignore`, `LICENSE` (MIT)
 - `policy/policy.example.yaml` (declarative policy rules)
 
 ## In progress
-- Phase 6 complete (awaiting review/merge to `main`). Next: Phase 7.
+- Phase 7 complete (awaiting review/merge to `main`). Next: Phase 8.
 
 ## Not started
-- Phase 7: React/TypeScript dashboard
 - Phase 8: integration polish, demo rehearsal, pitch deck

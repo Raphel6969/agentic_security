@@ -1,13 +1,14 @@
 """
 Sentinel Layer — FastAPI application entrypoint.
 
-Phase 6 scope: 3-stage detection cascade + Policy Engine + Toy Agent & Scenario REST API endpoints.
-See PHASE.md for what each phase adds here.
+Phase 7 scope: 3-stage detection cascade + Policy Engine + Toy Agent Scenarios + SOC Dashboard telemetry API.
 """
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.routers.demo import router as demo_router
+from app.routers.events import router as events_router
 from app.routers.screen import router as screen_router
 
 settings = get_settings()
@@ -21,8 +22,18 @@ app = FastAPI(
     ),
 )
 
+# Enable CORS for React/Vite Dashboard
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(screen_router)
 app.include_router(demo_router)
+app.include_router(events_router)
 
 
 @app.get("/health", tags=["system"])

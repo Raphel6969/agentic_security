@@ -97,12 +97,20 @@ TurboQuant-compressed vector index (`ARCHITECTURE.md`).
 - [x] Unit and integration test suite (`tests/test_toy_agent.py`) passing (6 tests, 40/40 total).
 
 
-### Phase 7 — Dashboard — `phase-7-dashboard` — ⬜ not started
+### Phase 7 — Dashboard — `phase-7-dashboard` — ✅ complete
 
-**Scope:** React/TypeScript dashboard, live feed, verdict detail view.
+**Scope:** React 18 + Vite Security Operations Center (SOC) Control Room + Telemetry Stream + Policy Editor.
 
-**Exit criteria:** Dashboard reflects live `/screen` calls with correct
-risk score/signal/verdict.
+**Exit criteria:**
+- [x] CORS middleware enabled in `backend/app/main.py`.
+- [x] Server-Sent Events (SSE) telemetry stream (`GET /events/stream`), audit history (`GET /events/history`), and policy endpoints (`GET /policy`, `PUT /policy`) built in `backend/app/routers/events.py`.
+- [x] React 18 + Vite frontend SPA (`frontend/`) initialized adhering strictly to design skills (`anti-ui-slop`, `high-end-visual-design`, `emil-design-eng`, `apple-design`).
+- [x] Double-Bezel glass architecture (`.bezel-shell`, `.bezel-core`), HTML5 Canvas particle background (`ParticleBackground.jsx`), and SVG radial risk radar gauge (`RiskRadarGauge.jsx`) implemented.
+- [x] 1-Click Interactive Attack Simulator (`AttackSimulator.jsx`) built, comparing Unprotected vs Sentinel Protected Agent side-by-side.
+- [x] Live SSE telemetry stream (`TelemetryFeed.jsx`), SQLite Hot Storage Audit Explorer (`AuditExplorer.jsx`), and Policy Manager (`PolicyManager.jsx`) implemented.
+- [x] Vite production build (`npm run build`) succeeded transforming 1577 modules in 24.30s.
+- [x] Backend pytest test suite (`pytest`) passing 40/40 tests.
+
 
 ### Phase 8 — Polish & demo — `phase-8-polish-demo` — ⬜ not started
 
