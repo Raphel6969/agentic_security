@@ -131,6 +131,14 @@ class SentinelGuard:
         if kwargs:
             final_args.update(kwargs)
 
+        # Support 'source' as alias for incoming_source and prevent forwarding to tool_fn
+        if "source" in final_args:
+            incoming_source = final_args.pop("source")
+        if "incoming_source" in final_args:
+            incoming_source = final_args.pop("incoming_source")
+        if "incoming_text" in final_args:
+            incoming_text = final_args.pop("incoming_text")
+
         screen_result = self.screen(tool_name, final_args, incoming_text, incoming_source)
 
         if tool_fn is not None:
