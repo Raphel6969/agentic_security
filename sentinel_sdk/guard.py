@@ -103,10 +103,11 @@ class SentinelGuard:
     def run_tool(
         self,
         tool_name: str,
-        arguments: dict[str, Any],
-        incoming_text: str,
+        arguments: Optional[dict[str, Any]] = None,
+        incoming_text: str = "",
         incoming_source: str = "user_input",
         tool_fn: Optional[Any] = None,
+        **kwargs: Any,
     ) -> Any:
         """
         Screen + execute a tool call.
@@ -115,18 +116,25 @@ class SentinelGuard:
 
         Args:
             tool_name: Name of the tool to call
-            arguments: Tool arguments dict
+            arguments: Optional Tool arguments dict
             incoming_text: The instruction/content that led to this tool call
             incoming_source: "user_input" | "retrieved_document" | "agent_generated"
             tool_fn: Optional callable to execute if allowed
+            **kwargs: Extra keyword arguments passed directly to the tool
 
         Returns:
             tool_fn(**arguments) result if provided, else the screen response dict
         """
-        screen_result = self.screen(tool_name, arguments, incoming_text, incoming_source)
+        final_args = {}
+        if arguments and isinstance(arguments, dict):
+            final_args.update(arguments)
+        if kwargs:
+            final_args.update(kwargs)
+
+        screen_result = self.screen(tool_name, final_args, incoming_text, incoming_source)
 
         if tool_fn is not None:
-            return tool_fn(**arguments)
+            return tool_fn(**final_args)
 
         return screen_result
 
