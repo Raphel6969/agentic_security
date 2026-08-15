@@ -7,9 +7,33 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      '/events': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/auth': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/demo': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/tokens': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/users': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/policy': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
       },
     },
   },

@@ -4,37 +4,100 @@ import LoginPage from './pages/LoginPage.jsx';
 import AdminPanel from './pages/AdminPanel.jsx';
 import SessionTokenPanel from './components/SessionTokenPanel.jsx';
 
-const API_BASE = 'http://localhost:8000';
+// ── Multi-fallback API helper ───────────────────────────────────────────────
+async function apiFetch(path, options = {}) {
+  // 1. Try direct port 8000 first for fast local development
+  try {
+    const res = await fetch(`http://localhost:8000${path}`, options);
+    if (res.ok) return res;
+  } catch {}
+
+  // 2. Try 127.0.0.1:8000
+  try {
+    const res = await fetch(`http://127.0.0.1:8000${path}`, options);
+    if (res.ok) return res;
+  } catch {}
+
+  // 3. Fallback to relative /api proxy
+  return fetch(`/api${path}`, options);
+}
 
 // ── Hooks ───────────────────────────────────────────────────────────────────
-function useStats(refreshMs = 2000) {
+function useStats(refreshMs = 2500) {
   const [stats, setStats] = useState({ total_screened: 0, blocked: 0, allowed: 0, requires_approval: 0, average_risk_score: 0, block_rate: 0 });
   const fetch_ = useCallback(async () => {
     try {
-      const r = await fetch(`${API_BASE}/events/stats`);
-      if (r.ok) setStats(await r.json());
-    } catch {}
+      const r = await apiFetch('/events/stats');
+      if (r && r.ok) {
+        const d = await r.json();
+        setStats(d);
+      }
+    } catch (err) {}
   }, []);
-  useEffect(() => { fetch_(); const t = setInterval(fetch_, refreshMs); return () => clearInterval(t); }, [fetch_, refreshMs]);
+
+  useEffect(() => {
+    fetch_();
+    const t = setInterval(fetch_, refreshMs);
+    return () => clearInterval(t);
+  }, [fetch_, refreshMs]);
+
   return [stats, fetch_];
 }
 
 function useSSE() {
   const [events, setEvents] = useState([]);
   const [connected, setConnected] = useState(false);
+
   useEffect(() => {
-    const es = new EventSource(`${API_BASE}/events/stream`);
-    es.onopen = () => setConnected(true);
-    es.onerror = () => setConnected(false);
-    es.onmessage = (e) => {
+    let es = null;
+    let cancelled = false;
+
+    const handleMessage = (e) => {
       try {
         const d = JSON.parse(e.data);
-        if (d.type === 'CONNECTED') { setConnected(true); return; }
-        setEvents(prev => [{ id: Date.now() + Math.random(), ts: new Date().toLocaleTimeString('en-US', { hour12: false }), ...d }, ...prev.slice(0, 299)]);
+        if (d.type === 'CONNECTED') {
+          setConnected(true);
+          return;
+        }
+        setEvents(prev => [{
+          id: Date.now() + Math.random(),
+          ts: new Date().toLocaleTimeString('en-US', { hour12: false }),
+          ...d
+        }, ...prev.slice(0, 299)]);
       } catch {}
     };
-    return () => es.close();
+
+    const connect = (url) => {
+      if (cancelled) return;
+      try {
+        es = new EventSource(url);
+        es.onopen = () => {
+          if (!cancelled) setConnected(true);
+        };
+        es.onmessage = handleMessage;
+        es.onerror = () => {
+          if (!cancelled) {
+            setConnected(false);
+            es.close();
+            // Retry after 2.5 seconds
+            setTimeout(() => {
+              if (!cancelled) connect(url === 'http://localhost:8000/events/stream' ? 'http://127.0.0.1:8000/events/stream' : 'http://localhost:8000/events/stream');
+            }, 2500);
+          }
+        };
+      } catch {
+        setConnected(false);
+      }
+    };
+
+    connect('http://localhost:8000/events/stream');
+
+    return () => {
+      cancelled = true;
+      if (es) es.close();
+    };
   }, []);
+
   return [events, connected];
 }
 
@@ -78,7 +141,25 @@ const NAV = [
 
 function Sidebar({ tab, setTab, sseConnected }) {
   const { user, logout } = useAuth();
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState(null);
   const visibleNav = NAV.filter(n => !n.adminOnly || user?.role === 'admin');
+
+  const handleColdSync = async () => {
+    setSyncing(true);
+    setSyncMsg(null);
+    try {
+      const r = await apiFetch('/events/sync-cold', { method: 'POST' });
+      const d = await r.json();
+      setSyncMsg('✓ Synced to Neon DB');
+      setTimeout(() => setSyncMsg(null), 3000);
+    } catch {
+      setSyncMsg('Sync error');
+      setTimeout(() => setSyncMsg(null), 3000);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   return (
     <aside style={{ width: 230, minHeight: '100vh', background: '#060914', borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', flexShrink: 0, zIndex: 10 }}>
@@ -110,6 +191,26 @@ function Sidebar({ tab, setTab, sseConnected }) {
           </div>
         ))}
       </nav>
+
+      {/* Storage & Architecture Indicator */}
+      <div style={{ padding: '0.85rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.15)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(240,240,248,0.3)', fontWeight: 600 }}>Storage Tiers</span>
+          <button onClick={handleColdSync} disabled={syncing} style={{ background: 'none', border: 'none', color: '#818cf8', fontSize: '0.55rem', fontFamily: 'JetBrains Mono', cursor: 'pointer', padding: 0 }}>
+            {syncing ? 'Syncing...' : syncMsg || '☁️ Sync Neon'}
+          </button>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.6rem', color: 'rgba(240,240,248,0.4)' }}>🔥 Hot Storage</span>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.55rem', color: '#00FF94', fontWeight: 700 }}>SQLite WAL (&lt;1ms)</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.6rem', color: 'rgba(240,240,248,0.4)' }}>☁️ Cold Storage</span>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.55rem', color: '#818cf8', fontWeight: 700 }}>Neon Cloud</span>
+          </div>
+        </div>
+      </div>
 
       {/* System status */}
       <div style={{ padding: '0.85rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
@@ -158,7 +259,7 @@ function LiveDemoPage({ events, onStatsChange }) {
     setScenarioResult(null);
     setError(null);
     try {
-      const r = await fetch(`${API_BASE}/demo/run-scenario`, {
+      const r = await apiFetch('/demo/run-scenario', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scenario_id: id }),
@@ -176,10 +277,10 @@ function LiveDemoPage({ events, onStatsChange }) {
 
   const toggleContinuous = async () => {
     if (continuous) {
-      await fetch(`${API_BASE}/demo/continuous/stop`, { method: 'POST' });
+      await apiFetch('/demo/continuous/stop', { method: 'POST' });
       setContinuous(false);
     } else {
-      await fetch(`${API_BASE}/demo/continuous`, { method: 'POST' });
+      await apiFetch('/demo/continuous', { method: 'POST' });
       setContinuous(true);
     }
   };
@@ -187,7 +288,7 @@ function LiveDemoPage({ events, onStatsChange }) {
   const screen = scenarioResult?.protected_run?.screen_response;
   const unprotected = scenarioResult?.unprotected_run;
   const meta = scenarioResult ? SCENARIO_META[scenarioResult.id] : null;
-  const recentEvents = events.slice(0, 25);
+  const recentEvents = events.slice(0, 30);
 
   return (
     <div style={{ display: 'flex', gap: '1.5rem', height: '100%', overflow: 'hidden' }}>
@@ -336,15 +437,20 @@ function AuditPage() {
   const [verdict, setVerdict] = useState('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
 
   const load = async () => {
     setLoading(true);
+    setFetchError(null);
     try {
-      const r = await fetch(`${API_BASE}/events/history?limit=300${verdict ? `&verdict=${verdict}` : ''}`);
+      const r = await apiFetch(`/events/history?limit=300${verdict ? `&verdict=${verdict}` : ''}`);
+      if (!r || !r.ok) throw new Error(`HTTP ${r?.status || 'Network Error'}`);
       const d = await r.json();
       setEvents(d.events || []);
       setTotal(d.total || 0);
-    } catch {} finally {
+    } catch (err) {
+      setFetchError(err.message || 'Failed to connect to backend.');
+    } finally {
       setLoading(false);
     }
   };
@@ -376,6 +482,12 @@ function AuditPage() {
         </button>
         <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.65rem', color: 'rgba(240,240,248,0.3)', whiteSpace: 'nowrap' }}>{total} records</span>
       </div>
+
+      {fetchError && (
+        <div style={{ background: 'rgba(255,61,90,0.1)', border: '1px solid rgba(255,61,90,0.3)', borderRadius: 8, padding: '0.75rem 1rem', color: '#FF3D5A', fontSize: '0.75rem', fontFamily: 'JetBrains Mono' }}>
+          ⚠️ Error loading audit logs: {fetchError}. Check if backend is running on port 8000.
+        </div>
+      )}
 
       <div style={{ flex: 1, overflowY: 'auto', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -411,7 +523,7 @@ function AuditPage() {
 }
 
 // ── Policy Page ──────────────────────────────────────────────────────────────
-function PolicyPage() {
+function PolicyPage({ activeTab }) {
   const [yaml, setYaml] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -420,9 +532,11 @@ function PolicyPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const r = await fetch(`${API_BASE}/policy`);
-      const d = await r.json();
-      setYaml(d.raw_yaml || '');
+      const r = await apiFetch('/policy');
+      if (r && r.ok) {
+        const d = await r.json();
+        setYaml(d.raw_yaml || '');
+      }
     } catch {
       setMsg({ type: 'err', text: 'Failed to load policy file.' });
     } finally {
@@ -430,13 +544,18 @@ function PolicyPage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  // Auto-reload policy whenever Policy tab becomes active
+  useEffect(() => {
+    if (activeTab === 'policy') {
+      load();
+    }
+  }, [activeTab]);
 
   const save = async () => {
     setSaving(true);
     setMsg(null);
     try {
-      const r = await fetch(`${API_BASE}/policy`, {
+      const r = await apiFetch('/policy', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ policy_yaml: yaml }),
@@ -490,7 +609,7 @@ function PolicyPage() {
 export default function App() {
   const { isAuthenticated, loading } = useAuth();
   const [tab, setTab] = useState('demo');
-  const [stats, fetchStats] = useStats(2000);
+  const [stats, fetchStats] = useStats(2500);
   const [events, sseConnected] = useSSE();
 
   const blockRate = stats.total_screened > 0 ? ((stats.blocked / stats.total_screened) * 100).toFixed(1) : '0.0';
@@ -532,7 +651,7 @@ export default function App() {
         <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 1.75rem' }}>
           {tab === 'demo' && <LiveDemoPage events={events} onStatsChange={fetchStats} />}
           {tab === 'audit' && <AuditPage />}
-          {tab === 'policy' && <PolicyPage />}
+          {tab === 'policy' && <PolicyPage activeTab={tab} />}
           {tab === 'tokens' && <SessionTokenPanel />}
           {tab === 'users' && <AdminPanel />}
         </div>

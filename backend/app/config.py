@@ -2,7 +2,8 @@
 Settings/config loading for Sentinel Layer.
 
 Phases 0–10: env-driven config loaded via python-dotenv.
-Secrets are never committed — see .env.example.
+Hot Storage: Local SQLite for sub-millisecond screening & dashboard operations.
+Cold Storage: Neon / PostgreSQL for cloud analytics & long-term persistence.
 """
 import os
 from functools import lru_cache
@@ -21,9 +22,19 @@ class Settings:
     groq_model: str = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
     groq_timeout_seconds: float = float(os.getenv("GROQ_TIMEOUT_SECONDS", "3.0"))
 
-    # Phase 5 — Policy Engine & SQLite Hot Storage settings
+    # Phase 5 — Policy Engine
     policy_file_path: str = os.getenv("POLICY_FILE_PATH", "policy/policy.example.yaml")
-    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./sentinel.db")
+
+    # Hot/Cold Database Architecture
+    # Hot Storage: Fast local SQLite for sub-millisecond runtime ops & UI polling
+    hot_database_url: str = os.getenv("HOT_DATABASE_URL", "sqlite:///./sentinel.db")
+    database_url: str = os.getenv("HOT_DATABASE_URL", "sqlite:///./sentinel.db")
+
+    # Cold Storage: Neon / PostgreSQL for cloud persistence & async sync
+    cold_database_url: str = os.getenv(
+        "COLD_DATABASE_URL",
+        os.getenv("NEON_DATABASE_URL", os.getenv("DATABASE_URL", ""))
+    )
 
     # Phase 10 — JWT Auth
     jwt_secret: str = os.getenv("JWT_SECRET", "change-me-in-production")
@@ -48,5 +59,3 @@ class Settings:
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-
-
