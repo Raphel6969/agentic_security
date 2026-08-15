@@ -21,17 +21,19 @@ export function AuthProvider({ children }) {
     const urlToken = params.get('token');
     if (urlToken) {
       localStorage.setItem('sentinel_token', urlToken);
+      localStorage.setItem('sentinel_jwt', urlToken);
       // Clean URL without reload
       window.history.replaceState({}, '', '/');
     }
 
-    const token = localStorage.getItem('sentinel_token');
+    const token = localStorage.getItem('sentinel_token') || localStorage.getItem('sentinel_jwt');
     if (token) {
       const payload = parseJwt(token);
       if (payload && payload.exp * 1000 > Date.now()) {
         setUser({ token, ...payload });
       } else {
         localStorage.removeItem('sentinel_token');
+        localStorage.removeItem('sentinel_jwt');
       }
     }
     setLoading(false);
@@ -39,12 +41,14 @@ export function AuthProvider({ children }) {
 
   const login = (token) => {
     localStorage.setItem('sentinel_token', token);
+    localStorage.setItem('sentinel_jwt', token);
     const payload = parseJwt(token);
     setUser({ token, ...payload });
   };
 
   const logout = () => {
     localStorage.removeItem('sentinel_token');
+    localStorage.removeItem('sentinel_jwt');
     setUser(null);
   };
 

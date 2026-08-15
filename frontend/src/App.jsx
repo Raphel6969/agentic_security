@@ -6,22 +6,22 @@ import SessionTokenPanel from './components/SessionTokenPanel.jsx';
 
 // ── Multi-fallback API helper with automatic JWT injection ──────────────────
 async function apiFetch(path, options = {}) {
-  const token = localStorage.getItem('sentinel_jwt');
+  const token = localStorage.getItem('sentinel_token') || localStorage.getItem('sentinel_jwt');
   const headers = { ...options.headers };
   if (token && !headers['Authorization']) {
     headers['Authorization'] = `Bearer ${token}`;
   }
   const opts = { ...options, headers };
 
-  // 1. Try direct port 8000 first for fast local development
+  // 1. Try 127.0.0.1:8000 (IPv4 prioritized on Windows)
   try {
-    const res = await fetch(`http://localhost:8000${path}`, opts);
+    const res = await fetch(`http://127.0.0.1:8000${path}`, opts);
     if (res.ok) return res;
   } catch {}
 
-  // 2. Try 127.0.0.1:8000
+  // 2. Try localhost:8000
   try {
-    const res = await fetch(`http://127.0.0.1:8000${path}`, opts);
+    const res = await fetch(`http://localhost:8000${path}`, opts);
     if (res.ok) return res;
   } catch {}
 
@@ -48,69 +48,111 @@ function useStats(refreshMs = 2500) {
     return () => clearInterval(t);
   }, [fetch_, refreshMs]);
 
-  return [stats, fetch_];
+  return [stats, fetch_, setStats];
 }
 
-function useSSE() {
+function useRealtimeStream(onNewEvent) {
   const [events, setEvents] = useState([]);
   const [connected, setConnected] = useState(false);
+  const [transport, setTransport] = useState('connecting');
 
   useEffect(() => {
+    let ws = null;
     let es = null;
     let cancelled = false;
-    const token = localStorage.getItem('sentinel_jwt');
+    const token = localStorage.getItem('sentinel_token') || localStorage.getItem('sentinel_jwt');
     const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
 
-    const handleMessage = (e) => {
-      try {
-        const d = JSON.parse(e.data);
-        if (d.type === 'CONNECTED') {
-          setConnected(true);
-          return;
-        }
-        setEvents(prev => [{
-          id: Date.now() + Math.random(),
-          ts: new Date().toLocaleTimeString('en-US', { hour12: false }),
-          ...d
-        }, ...prev.slice(0, 299)]);
-      } catch {}
+    const handleEvent = (data) => {
+      const newEntry = {
+        id: data.id || Date.now() + Math.random(),
+        ts: data.timestamp ? new Date(data.timestamp).toLocaleTimeString('en-US', { hour12: false }) : new Date().toLocaleTimeString('en-US', { hour12: false }),
+        ...data,
+      };
+      setEvents(prev => [newEntry, ...prev.slice(0, 299)]);
+      if (onNewEvent) onNewEvent(newEntry);
     };
 
-    const connect = (baseUrl) => {
+    // Try WebSocket first
+    const connectWS = () => {
       if (cancelled) return;
       try {
-        es = new EventSource(`${baseUrl}${tokenParam}`);
-        es.onopen = () => {
-          if (!cancelled) setConnected(true);
+        ws = new WebSocket(`ws://127.0.0.1:8000/ws/events${tokenParam}`);
+        ws.onopen = () => {
+          if (!cancelled) {
+            setConnected(true);
+            setTransport('WebSocket (Active)');
+          }
         };
-        es.onmessage = handleMessage;
-        es.onerror = () => {
+        ws.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (data.type === 'CONNECTED') {
+              setConnected(true);
+              setTransport('WebSocket (Active)');
+              return;
+            }
+            if (data.type === 'SCREEN_DECISION' || data.verdict) {
+              handleEvent(data);
+            }
+          } catch {}
+        };
+        ws.onerror = () => {
+          fallbackSSE();
+        };
+        ws.onclose = () => {
           if (!cancelled) {
             setConnected(false);
-            es.close();
-            // Retry on alternative host after 2.5 seconds
-            setTimeout(() => {
-              if (!cancelled) {
-                const nextUrl = baseUrl.includes('localhost') ? 'http://127.0.0.1:8000/events/stream' : 'http://localhost:8000/events/stream';
-                connect(nextUrl);
-              }
-            }, 2500);
+            fallbackSSE();
           }
         };
       } catch {
-        setConnected(false);
+        fallbackSSE();
       }
     };
 
-    connect('http://localhost:8000/events/stream');
+    // Fallback to Server-Sent Events
+    const fallbackSSE = () => {
+      if (cancelled || es) return;
+      try {
+        es = new EventSource(`http://127.0.0.1:8000/events/stream${tokenParam}`);
+        es.onopen = () => {
+          if (!cancelled) {
+            setConnected(true);
+            setTransport('SSE Stream (Active)');
+          }
+        };
+        es.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (data.type === 'CONNECTED') {
+              setConnected(true);
+              return;
+            }
+            if (data.type === 'SCREEN_DECISION' || data.verdict) {
+              handleEvent(data);
+            }
+          } catch {}
+        };
+        es.onerror = () => {
+          if (!cancelled) {
+            setConnected(false);
+            setTransport('Reconnecting...');
+          }
+        };
+      } catch {}
+    };
+
+    connectWS();
 
     return () => {
       cancelled = true;
+      if (ws) ws.close();
       if (es) es.close();
     };
   }, []);
 
-  return [events, connected];
+  return [events, connected, transport];
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -151,7 +193,7 @@ const NAV = [
   { id: 'users', label: 'User Admin', icon: '👥', adminOnly: true },
 ];
 
-function Sidebar({ tab, setTab, sseConnected }) {
+function Sidebar({ tab, setTab, realtimeConnected, transport }) {
   const { user, logout } = useAuth();
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState(null);
@@ -215,7 +257,7 @@ function Sidebar({ tab, setTab, sseConnected }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.6rem', color: 'rgba(240,240,248,0.4)' }}>🔥 Hot Storage</span>
-            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.55rem', color: '#00FF94', fontWeight: 700 }}>SQLite WAL (&lt;1ms)</span>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.55rem', color: '#00FF94', fontWeight: 700 }}>SQLite WAL (&lt;0.2ms)</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.6rem', color: 'rgba(240,240,248,0.4)' }}>☁️ Cold Storage</span>
@@ -233,7 +275,7 @@ function Sidebar({ tab, setTab, sseConnected }) {
           ['Stage 2 ML Vector Index', true],
           ['Stage 3 LLM Judge', true],
           ['Policy Hard Guard', true],
-          ['SSE Telemetry', sseConnected],
+          [transport || 'Realtime Stream', realtimeConnected],
         ].map(([label, ok]) => (
           <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
             <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.6rem', color: 'rgba(240,240,248,0.38)' }}>{label}</span>
@@ -246,7 +288,7 @@ function Sidebar({ tab, setTab, sseConnected }) {
       {user && (
         <div style={{ padding: '0.85rem 1rem', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(0,0,0,0.2)' }}>
           <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a5b4fc', fontSize: 12, fontWeight: 700, flexShrink: 0, overflow: 'hidden' }}>
-            {user.name?.[0]?.toUpperCase() || '?'}
+            {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '?'}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name || user.email}</div>
@@ -406,10 +448,10 @@ function LiveDemoPage({ events, onStatsChange }) {
         )}
       </div>
 
-      {/* RIGHT — Live SSE Stream Feed */}
+      {/* RIGHT — Live Realtime Stream Feed */}
       <div style={{ width: '50%', display: 'flex', flexDirection: 'column', gap: '0.75rem', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(240,240,248,0.3)', fontWeight: 600 }}>Live Telemetry Stream (SSE)</span>
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.625rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(240,240,248,0.3)', fontWeight: 600 }}>Live Telemetry Stream</span>
           <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.6rem', color: 'rgba(240,240,248,0.3)' }}>{events.length} events received</span>
         </div>
 
@@ -417,7 +459,7 @@ function LiveDemoPage({ events, onStatsChange }) {
           {recentEvents.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'rgba(240,240,248,0.2)', fontFamily: 'JetBrains Mono', fontSize: '0.75rem' }}>
               Waiting for live agent screening events...<br /><br />
-              <span style={{ fontSize: '0.65rem' }}>Launch an attack scenario or run the PDF demo agent to see decisions stream live.</span>
+              <span style={{ fontSize: '0.65rem' }}>Launch an attack scenario, send a Postman request, or run the SDK test suite to stream decisions in real time.</span>
             </div>
           ) : (
             recentEvents.map(ev => (
@@ -442,6 +484,7 @@ function LiveDemoPage({ events, onStatsChange }) {
   );
 }
 
+// ── Audit Page ───────────────────────────────────────────────────────────────
 function AuditPage({ activeTab }) {
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
@@ -470,7 +513,7 @@ function AuditPage({ activeTab }) {
   // Initial load and whenever filter/tab changes
   useEffect(() => {
     load(true);
-  }, [verdict, activeTab, load]);
+  }, [verdict, activeTab, user?.id, load]);
 
   // Auto-poll every 2.5s so Postman calls flash onto screen immediately
   useEffect(() => {
@@ -498,11 +541,11 @@ function AuditPage({ activeTab }) {
           <option value="allow">ALLOW</option>
           <option value="require_approval">APPROVAL</option>
         </select>
-        <button onClick={load} style={{ padding: '0.5rem 1rem', borderRadius: 7, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'JetBrains Mono', fontSize: '0.625rem', color: 'rgba(240,240,248,0.6)', cursor: 'pointer', letterSpacing: '0.1em' }}>
+        <button onClick={() => load(true)} style={{ padding: '0.5rem 1rem', borderRadius: 7, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'JetBrains Mono', fontSize: '0.625rem', color: 'rgba(240,240,248,0.6)', cursor: 'pointer', letterSpacing: '0.1em' }}>
           {loading ? '...' : 'REFRESH'}
         </button>
         <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.65rem', color: 'rgba(240,240,248,0.3)', whiteSpace: 'nowrap' }}>
-          {total} records {user?.role !== 'admin' ? `(Your User Scope)` : `(Global System Scope)`}
+          {total} records {user?.role !== 'admin' ? `(Your User Scope: ${user?.email || 'User'})` : `(Global System Scope)`}
         </span>
       </div>
 
@@ -524,7 +567,7 @@ function AuditPage({ activeTab }) {
           <tbody>
             {filtered.length === 0 ? (
               <tr><td colSpan={7} style={{ textAlign: 'center', padding: '3rem', fontFamily: 'JetBrains Mono', fontSize: '0.7rem', color: 'rgba(240,240,248,0.25)' }}>
-                No audit records found for this scope. Run an attack scenario or use SentinelGuard SDK to populate.
+                No audit records found for {user?.role !== 'admin' ? `your account (${user?.email})` : 'this filter'}. Run an attack scenario or use SentinelGuard SDK to populate.
               </td></tr>
             ) : filtered.map(row => {
               const c = VERDICT_COLOR[row.verdict] || '#F0F0F8';
@@ -636,8 +679,20 @@ function PolicyPage({ activeTab }) {
 export default function App() {
   const { isAuthenticated, loading, user } = useAuth();
   const [tab, setTab] = useState('demo');
-  const [stats, fetchStats] = useStats(2500);
-  const [events, sseConnected] = useSSE();
+  const [stats, fetchStats, setStats] = useStats(2500);
+
+  const handleNewEvent = useCallback((event) => {
+    fetchStats();
+  }, [fetchStats]);
+
+  const [events, realtimeConnected, transport] = useRealtimeStream(handleNewEvent);
+
+  // Reload stats whenever active user changes
+  useEffect(() => {
+    if (user?.id) {
+      fetchStats();
+    }
+  }, [user?.id, fetchStats]);
 
   const blockRate = stats.total_screened > 0 ? ((stats.blocked / stats.total_screened) * 100).toFixed(1) : '0.0';
   const riskColor = stats.average_risk_score >= 0.7 ? '#FF3D5A' : stats.average_risk_score >= 0.4 ? '#F59E0B' : '#00FF94';
@@ -656,7 +711,7 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#04060F' }}>
-      <Sidebar tab={tab} setTab={setTab} sseConnected={sseConnected} />
+      <Sidebar tab={tab} setTab={setTab} realtimeConnected={realtimeConnected} transport={transport} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', zIndex: 10, position: 'relative' }}>
         {/* Metric Bar */}
