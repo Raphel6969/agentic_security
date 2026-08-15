@@ -60,6 +60,34 @@ async def get_current_user(
     return user
 
 
+async def get_optional_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+    token: Optional[str] = None,
+    db: Session = Depends(_get_db),
+) -> Optional[UserDB]:
+    """
+    Returns UserDB if valid Bearer token or ?token= query param is provided, else None.
+    Does not raise 401, enabling role-filtered data scoping while maintaining public demo access.
+    """
+    raw_token = None
+    if credentials:
+        raw_token = credentials.credentials
+    elif token:
+        raw_token = token
+
+    if not raw_token:
+        return None
+
+    try:
+        payload = decode_token(raw_token)
+        user_id: str = payload.get("sub", "")
+        if not user_id:
+            return None
+        return db.query(UserDB).filter(UserDB.id == user_id, UserDB.is_active == True).first()
+    except Exception:
+        return None
+
+
 def require_role(*allowed_roles: str):
     """
     Dependency factory for role-gated routes.

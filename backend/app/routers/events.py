@@ -2,15 +2,17 @@
 /events & /policy router for Sentinel Layer.
 
 Features:
+- Role-Based Telemetry Scoping:
+    * Admin can see all agentic operations across all users.
+    * Developers, Interns, and Tech Leads only see their own telemetry.
 - Sub-millisecond In-Memory Caching for stats and telemetry history
-- Real-time SSE event broadcasting
+- Real-time SSE event broadcasting with user-scoped filtering
 - Hot Storage (SQLite WAL) for durable local hot queries
 - Cold Storage Sync to Neon PostgreSQL
 - Declarative Policy Management with anti-tampering validation
 """
 import asyncio
 from collections import deque
-from datetime import datetime, timezone
 import json
 import logging
 from pathlib import Path
@@ -23,14 +25,14 @@ import yaml
 from app.config import get_settings
 from app.db.models import ScreenEventDB, UserDB
 from app.db.session import SessionLocal, sync_hot_to_cold
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user, get_optional_current_user
 from app.services.policy_engine import get_policy_engine
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["telemetry"])
 
-# Global event queue for real-time SSE broadcasting
-_event_listeners: list[asyncio.Queue] = []
+# Global event listeners: list of (queue, user_id, user_role, user_email)
+_event_listeners: list[tuple[asyncio.Queue, Optional[str], Optional[str], Optional[str]]] = []
 
 # In-memory fast ring-buffer for sub-millisecond history and stats retrieval
 _recent_events_cache: deque[dict] = deque(maxlen=500)
@@ -106,7 +108,7 @@ def broadcast_event(event_data: dict):
     Sub-millisecond event broadcaster:
     1. Updates atomic in-memory stats in O(1) time.
     2. Appends to ring-buffer in O(1) time.
-    3. Broadcasts to all active SSE subscribers immediately.
+    3. Broadcasts to active SSE subscribers filtered by user identity/role.
     """
     global _stats_cache
     verdict = event_data.get("verdict", "allow")
@@ -132,10 +134,20 @@ def broadcast_event(event_data: dict):
     # Append to recent events cache
     _recent_events_cache.append(event_data)
 
-    # Broadcast to SSE listeners
-    for queue in _event_listeners:
+    event_user_id = event_data.get("user_id")
+    event_user_email = event_data.get("user_email")
+
+    # Broadcast to SSE listeners with Role-Based Scoping
+    for queue, listener_uid, listener_role, listener_email in _event_listeners:
         try:
-            queue.put_nowait(event_data)
+            # Admin sees all events
+            if listener_role == "admin":
+                queue.put_nowait(event_data)
+            # Non-admin sees their own events or public demo events
+            elif listener_uid and (event_user_id == listener_uid or event_user_email == listener_email):
+                queue.put_nowait(event_data)
+            elif not listener_uid and not event_user_id:
+                queue.put_nowait(event_data)
         except Exception:
             pass
 
@@ -164,16 +176,20 @@ async def get_event_history(
     limit: int = Query(200, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     verdict: str | None = None,
+    current_user: Optional[UserDB] = Depends(get_optional_current_user),
 ) -> dict:
     """
-    Returns historical screened event logs.
-    Serves directly from in-memory cache when possible for sub-millisecond response times.
+    Returns historical screened event logs with Role-Based Scoping:
+    - Admin: can view all screened events across all users.
+    - Developer / Intern / Tech Lead: only see events initiated under their user ID / email.
     """
     if not _stats_initialized:
         _init_stats_from_db()
 
-    # Fast path: serve from in-memory ring-buffer for default latest query
-    if not verdict and offset == 0 and len(_recent_events_cache) > 0:
+    is_admin = current_user and current_user.role == "admin"
+
+    # Fast path: in-memory ring-buffer for Admin default query
+    if is_admin and not verdict and offset == 0 and len(_recent_events_cache) > 0:
         events_list = list(reversed(_recent_events_cache))[:limit]
         return {
             "events": events_list,
@@ -182,9 +198,19 @@ async def get_event_history(
             "offset": offset,
         }
 
-    # Hot Storage query for filtered / paginated requests
+    # Hot Storage query with user-level scoping
     with SessionLocal() as db:
         query = db.query(ScreenEventDB)
+
+        # Scoping rule: non-admins only see their own records
+        if current_user and not is_admin:
+            query = query.filter(
+                (ScreenEventDB.user_id == current_user.id) | (ScreenEventDB.user_email == current_user.email)
+            )
+        elif not current_user:
+            # Unauthenticated public demo view
+            query = query.filter(ScreenEventDB.user_id == None)
+
         if verdict:
             query = query.filter(ScreenEventDB.verdict == verdict.lower())
 
@@ -229,10 +255,46 @@ async def get_event_history(
 
 
 @router.get("/events/stats")
-async def get_event_stats() -> dict:
-    """Returns analytics summary in 0.05ms from in-memory cache."""
+async def get_event_stats(
+    current_user: Optional[UserDB] = Depends(get_optional_current_user),
+) -> dict:
+    """
+    Returns analytics summary:
+    - Admin: global system-wide metrics.
+    - Developer / Intern / Tech Lead: personalized metrics for their own agent executions.
+    """
     if not _stats_initialized:
         _init_stats_from_db()
+
+    is_admin = current_user and current_user.role == "admin"
+    if is_admin:
+        return _stats_cache
+
+    if current_user:
+        with SessionLocal() as db:
+            query = db.query(ScreenEventDB).filter(
+                (ScreenEventDB.user_id == current_user.id) | (ScreenEventDB.user_email == current_user.email)
+            )
+            total = query.count()
+            blocks = query.filter(ScreenEventDB.verdict == "block").count()
+            allows = query.filter(ScreenEventDB.verdict == "allow").count()
+            approvals = query.filter(ScreenEventDB.verdict == "require_approval").count()
+
+            avg_score_row = query.with_entities(ScreenEventDB.risk_score).all()
+            avg_score = (
+                sum(r[0] for r in avg_score_row) / len(avg_score_row) if avg_score_row else 0.0
+            )
+            block_rate = (blocks / total * 100) if total > 0 else 0.0
+
+            return {
+                "total_screened": total,
+                "blocked": blocks,
+                "allowed": allows,
+                "requires_approval": approvals,
+                "average_risk_score": round(avg_score, 3),
+                "block_rate": round(block_rate, 1),
+            }
+
     return _stats_cache
 
 
@@ -244,12 +306,25 @@ async def trigger_cold_storage_sync(background_tasks: BackgroundTasks) -> dict:
 
 
 @router.get("/events/stream")
-async def sse_event_stream() -> StreamingResponse:
-    """Server-Sent Events endpoint broadcasting live screening decisions."""
+async def sse_event_stream(
+    token: Optional[str] = None,
+    current_user: Optional[UserDB] = Depends(get_optional_current_user),
+) -> StreamingResponse:
+    """
+    Server-Sent Events endpoint broadcasting live screening decisions.
+    Respects user identity for role-based scoping.
+    """
     async def event_generator() -> AsyncGenerator[str, None]:
         queue = asyncio.Queue()
-        _event_listeners.append(queue)
-        yield f"data: {json.dumps({'type': 'CONNECTED', 'message': 'Subscribed to Sentinel live event stream.'})}\n\n"
+        uid = current_user.id if current_user else None
+        role = current_user.role if current_user else None
+        email = current_user.email if current_user else None
+
+        listener_entry = (queue, uid, role, email)
+        _event_listeners.append(listener_entry)
+
+        sub_msg = f"Subscribed as {email or 'Guest'} ({role or 'Public'})"
+        yield f"data: {json.dumps({'type': 'CONNECTED', 'message': sub_msg})}\n\n"
         try:
             while True:
                 data = await queue.get()
@@ -257,8 +332,8 @@ async def sse_event_stream() -> StreamingResponse:
         except asyncio.CancelledError:
             pass
         finally:
-            if queue in _event_listeners:
-                _event_listeners.remove(queue)
+            if listener_entry in _event_listeners:
+                _event_listeners.remove(listener_entry)
 
     return StreamingResponse(
         event_generator(),

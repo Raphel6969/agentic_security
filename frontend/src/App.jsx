@@ -4,22 +4,29 @@ import LoginPage from './pages/LoginPage.jsx';
 import AdminPanel from './pages/AdminPanel.jsx';
 import SessionTokenPanel from './components/SessionTokenPanel.jsx';
 
-// ── Multi-fallback API helper ───────────────────────────────────────────────
+// ── Multi-fallback API helper with automatic JWT injection ──────────────────
 async function apiFetch(path, options = {}) {
+  const token = localStorage.getItem('sentinel_jwt');
+  const headers = { ...options.headers };
+  if (token && !headers['Authorization']) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const opts = { ...options, headers };
+
   // 1. Try direct port 8000 first for fast local development
   try {
-    const res = await fetch(`http://localhost:8000${path}`, options);
+    const res = await fetch(`http://localhost:8000${path}`, opts);
     if (res.ok) return res;
   } catch {}
 
   // 2. Try 127.0.0.1:8000
   try {
-    const res = await fetch(`http://127.0.0.1:8000${path}`, options);
+    const res = await fetch(`http://127.0.0.1:8000${path}`, opts);
     if (res.ok) return res;
   } catch {}
 
   // 3. Fallback to relative /api proxy
-  return fetch(`/api${path}`, options);
+  return fetch(`/api${path}`, opts);
 }
 
 // ── Hooks ───────────────────────────────────────────────────────────────────
@@ -51,6 +58,8 @@ function useSSE() {
   useEffect(() => {
     let es = null;
     let cancelled = false;
+    const token = localStorage.getItem('sentinel_jwt');
+    const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
 
     const handleMessage = (e) => {
       try {
@@ -67,10 +76,10 @@ function useSSE() {
       } catch {}
     };
 
-    const connect = (url) => {
+    const connect = (baseUrl) => {
       if (cancelled) return;
       try {
-        es = new EventSource(url);
+        es = new EventSource(`${baseUrl}${tokenParam}`);
         es.onopen = () => {
           if (!cancelled) setConnected(true);
         };
@@ -79,9 +88,12 @@ function useSSE() {
           if (!cancelled) {
             setConnected(false);
             es.close();
-            // Retry after 2.5 seconds
+            // Retry on alternative host after 2.5 seconds
             setTimeout(() => {
-              if (!cancelled) connect(url === 'http://localhost:8000/events/stream' ? 'http://127.0.0.1:8000/events/stream' : 'http://localhost:8000/events/stream');
+              if (!cancelled) {
+                const nextUrl = baseUrl.includes('localhost') ? 'http://127.0.0.1:8000/events/stream' : 'http://localhost:8000/events/stream';
+                connect(nextUrl);
+              }
             }, 2500);
           }
         };
@@ -432,6 +444,7 @@ function LiveDemoPage({ events, onStatsChange }) {
 
 // ── Audit Page ───────────────────────────────────────────────────────────────
 function AuditPage() {
+  const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [total, setTotal] = useState(0);
   const [verdict, setVerdict] = useState('');
@@ -480,7 +493,9 @@ function AuditPage() {
         <button onClick={load} style={{ padding: '0.5rem 1rem', borderRadius: 7, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'JetBrains Mono', fontSize: '0.625rem', color: 'rgba(240,240,248,0.6)', cursor: 'pointer', letterSpacing: '0.1em' }}>
           {loading ? '...' : 'REFRESH'}
         </button>
-        <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.65rem', color: 'rgba(240,240,248,0.3)', whiteSpace: 'nowrap' }}>{total} records</span>
+        <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.65rem', color: 'rgba(240,240,248,0.3)', whiteSpace: 'nowrap' }}>
+          {total} records {user?.role !== 'admin' ? `(Your User Scope)` : `(Global System Scope)`}
+        </span>
       </div>
 
       {fetchError && (
@@ -500,7 +515,9 @@ function AuditPage() {
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '3rem', fontFamily: 'JetBrains Mono', fontSize: '0.7rem', color: 'rgba(240,240,248,0.25)' }}>No audit records found. Run an attack scenario or use SentinelGuard SDK to populate.</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '3rem', fontFamily: 'JetBrains Mono', fontSize: '0.7rem', color: 'rgba(240,240,248,0.25)' }}>
+                No audit records found for this scope. Run an attack scenario or use SentinelGuard SDK to populate.
+              </td></tr>
             ) : filtered.map(row => {
               const c = VERDICT_COLOR[row.verdict] || '#F0F0F8';
               return (
@@ -508,7 +525,9 @@ function AuditPage() {
                   <td style={{ padding: '0.6rem 0.85rem', fontFamily: 'JetBrains Mono', fontSize: '0.65rem', color: 'rgba(240,240,248,0.3)' }}>#{row.id}</td>
                   <td style={{ padding: '0.6rem 0.85rem', fontFamily: 'JetBrains Mono', fontSize: '0.65rem', color: 'rgba(240,240,248,0.35)', whiteSpace: 'nowrap' }}>{row.timestamp ? new Date(row.timestamp).toLocaleTimeString() : '—'}</td>
                   <td style={{ padding: '0.6rem 0.85rem', fontFamily: 'JetBrains Mono', fontSize: '0.65rem', color: '#7C3AED', fontWeight: 600 }}>{row.tool_name}</td>
-                  <td style={{ padding: '0.6rem 0.85rem', fontFamily: 'JetBrains Mono', fontSize: '0.625rem', color: 'rgba(240,240,248,0.45)' }}>{row.user_email || row.agent_id}</td>
+                  <td style={{ padding: '0.6rem 0.85rem', fontFamily: 'JetBrains Mono', fontSize: '0.625rem', color: 'rgba(240,240,248,0.45)' }}>
+                    {row.user_email ? `${row.user_email} (${row.user_role || 'user'})` : (row.agent_id || 'unassigned')}
+                  </td>
                   <td style={{ padding: '0.6rem 0.85rem', fontFamily: 'JetBrains Mono', fontSize: '0.7rem', color: c, fontWeight: 700 }}>{row.risk_score?.toFixed(2)}</td>
                   <td style={{ padding: '0.6rem 0.85rem' }}><VerdictBadge verdict={row.verdict} /></td>
                   <td style={{ padding: '0.6rem 0.85rem', fontFamily: 'Plus Jakarta Sans', fontSize: '0.65rem', color: 'rgba(240,240,248,0.45)', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.explanation}</td>
@@ -607,7 +626,7 @@ function PolicyPage({ activeTab }) {
 
 // ── Root App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const [tab, setTab] = useState('demo');
   const [stats, fetchStats] = useStats(2500);
   const [events, sseConnected] = useSSE();
@@ -643,7 +662,9 @@ export default function App() {
             <div style={{ fontFamily: 'Plus Jakarta Sans', fontWeight: 700, fontSize: '0.8rem', color: 'rgba(240,240,248,0.8)' }}>
               {pageTitles[tab] || tab}
             </div>
-            <div style={{ fontFamily: 'JetBrains Mono', fontSize: '0.55rem', color: 'rgba(240,240,248,0.22)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 2 }}>Sentinel Layer v0.1.0</div>
+            <div style={{ fontFamily: 'JetBrains Mono', fontSize: '0.55rem', color: 'rgba(240,240,248,0.22)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 2 }}>
+              {user?.role === 'admin' ? '👑 Admin Mode (All Users)' : `👤 Scope: ${user?.email || 'User'}`}
+            </div>
           </div>
         </div>
 
