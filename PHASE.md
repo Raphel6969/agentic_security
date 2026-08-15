@@ -125,6 +125,32 @@ TurboQuant-compressed vector index (`ARCHITECTURE.md`).
 - [x] All 8 phases completed, documented, and verified.
 
 
+### Phase 9 — Continuous Simulation & Unified Split-Screen — `phase-9-simulation` — ✅ complete
+
+**Scope:** Real-time continuous simulation backend, pre-seeded DB state, unified split-screen live operations dashboard.
+
+**Exit criteria:**
+- [x] Added `POST /demo/seed` pre-populating realistic threat history in SQLite.
+- [x] Added background continuous agent simulation (`POST /demo/continuous`, `POST /demo/continuous/stop`).
+- [x] Unified frontend layout in `App.jsx` combining live telemetry stream alongside interactive agent controls.
+
+
+### Phase 10 — Auth, RBAC, Agent Session Tokens & SDK — `phase-10-auth` — ✅ complete
+
+**Scope:** 4-Role Hierarchical RBAC (Admin, Tech Lead, Developer, Intern), Google/GitHub OAuth, Signed 8-Hour Agent Session Tokens, Stage 0 Permission Enforcement in `/screen`, Python SDK (`sentinel_sdk`), and PDF White-Text Indirect Injection Demo.
+
+**Exit criteria:**
+- [x] Extended SQLite schema with `users`, `user_permissions`, `agent_sessions` tables and added nullable `user_id`, `user_email`, `user_role` to `screen_events`.
+- [x] JWT Auth service (`app/services/auth.py`), middleware dependencies (`app/middleware/auth.py`), and OAuth routers (`app/routers/auth.py`).
+- [x] Admin-only user management API (`app/routers/users.py`) for inviting members and toggling per-user tool permissions.
+- [x] Agent Session Token API (`app/routers/tokens.py`) issuing signed 8-hour JWTs with permission snapshots.
+- [x] Stage 0 Token Permission Check in `app/routers/screen.py` blocking unauthorized tool invocations instantly before cascade execution.
+- [x] Python SDK (`sentinel_sdk/`) with `SentinelGuard` and LangChain `SentinelToolWrapper`.
+- [x] Poisoned invoice PDF and end-to-end runnable script (`demos/pdf_injection/demo_agent.py`) demonstrating detection of hidden white-text injections.
+- [x] React frontend auth layer with Sentinel-branded `LoginPage.jsx`, `AdminPanel.jsx`, and `SessionTokenPanel.jsx`.
+- [x] Complete Postman collection (`docs/sentinel_api.postman_collection.json`) covering all roles, safe/blocked scenarios, and telemetry.
+- [x] Full backend test suite (`pytest`) passing 55/55 tests and Vite production build succeeding with 0 errors.
+
 ---
 
 ## How to use this file

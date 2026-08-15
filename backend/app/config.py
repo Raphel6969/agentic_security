@@ -1,13 +1,14 @@
 """
 Settings/config loading for Sentinel Layer.
 
-Phase 0: just enough to prove the pattern (env-driven config, no secrets
-committed). Real settings (Groq API key, policy file path, DB path) get
-added in the phases that need them (4, 5, 6) — do not pre-add unused
-settings ahead of their phase (RULE.md Section A.2).
+Phases 0–10: env-driven config loaded via python-dotenv.
+Secrets are never committed — see .env.example.
 """
 import os
 from functools import lru_cache
+from dotenv import load_dotenv
+
+load_dotenv()  # loads .env from project root at import time
 
 
 class Settings:
@@ -23,6 +24,25 @@ class Settings:
     # Phase 5 — Policy Engine & SQLite Hot Storage settings
     policy_file_path: str = os.getenv("POLICY_FILE_PATH", "policy/policy.example.yaml")
     database_url: str = os.getenv("DATABASE_URL", "sqlite:///./sentinel.db")
+
+    # Phase 10 — JWT Auth
+    jwt_secret: str = os.getenv("JWT_SECRET", "change-me-in-production")
+    jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
+    jwt_access_token_expire_minutes: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+    jwt_agent_token_expire_hours: int = int(os.getenv("JWT_AGENT_TOKEN_EXPIRE_HOURS", "8"))
+
+    # Phase 10 — Google OAuth
+    google_client_id: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    google_client_secret: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
+    google_redirect_uri: str = os.getenv("OAUTH_CALLBACK_URL", "http://localhost:8000/auth/google/callback")
+
+    # Phase 10 — GitHub OAuth
+    github_client_id: str = os.getenv("GITHUB_CLIENT_ID", "")
+    github_client_secret: str = os.getenv("GITHUB_CLIENT_SECRET", "")
+    github_redirect_uri: str = "http://localhost:8000/auth/github/callback"
+
+    # Phase 10 — Frontend URL (OAuth post-login redirect)
+    frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 
 @lru_cache

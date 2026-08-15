@@ -1,4 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useAuth } from './context/AuthContext.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import AdminPanel from './pages/AdminPanel.jsx';
+import SessionTokenPanel from './components/SessionTokenPanel.jsx';
 
 // ── Hooks ───────────────────────────────────────────────────────────────────
 function useStats(refreshMs = 2000) {
@@ -63,11 +67,16 @@ const NAV = [
   { id: 'demo', label: 'Live Demo', icon: '⚡' },
   { id: 'audit', label: 'Audit Log', icon: '▤' },
   { id: 'policy', label: 'Policy', icon: '◈' },
+  { id: 'users', label: 'Users', icon: '◎', adminOnly: true },
 ];
 
 function Sidebar({ tab, setTab, sseConnected }) {
+  const { user, logout } = useAuth();
+  const [showTokenPanel, setShowTokenPanel] = useState(false);
+  const visibleNav = NAV.filter(n => !n.adminOnly || user?.role === 'admin');
+
   return (
-    <aside style={{ width: 210, minHeight: '100vh', background: '#060914', borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', flexShrink: 0, zIndex: 10 }}>
+    <aside style={{ width: 220, minHeight: '100vh', background: '#060914', borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', flexShrink: 0, zIndex: 10 }}>
       {/* Logo */}
       <div style={{ padding: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -84,7 +93,7 @@ function Sidebar({ tab, setTab, sseConnected }) {
       {/* Nav */}
       <nav style={{ flex: 1, padding: '0.75rem 0.5rem', display: 'flex', flexDirection: 'column', gap: 2 }}>
         <div style={{ padding: '0.4rem 0.875rem', fontFamily: 'JetBrains Mono', fontSize: '0.55rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(240,240,248,0.25)', fontWeight: 600, marginBottom: 2 }}>Operations</div>
-        {NAV.map((n) => (
+        {visibleNav.map((n) => (
           <div key={n.id} onClick={() => setTab(n.id)}
             style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0.55rem 0.875rem', borderRadius: 7, cursor: 'pointer', transition: 'all 180ms ease', fontSize: '0.8rem', fontWeight: 500, userSelect: 'none',
               color: tab === n.id ? '#00FF94' : 'rgba(240,240,248,0.4)',
@@ -98,17 +107,42 @@ function Sidebar({ tab, setTab, sseConnected }) {
       </nav>
 
       {/* System status */}
-      <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ fontFamily: 'JetBrains Mono', fontSize: '0.55rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(240,240,248,0.25)', marginBottom: 10 }}>Stage Status</div>
+      <div style={{ padding: '0.75rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ fontFamily: 'JetBrains Mono', fontSize: '0.55rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(240,240,248,0.25)', marginBottom: 8 }}>Stage Status</div>
         {[
           ['Rule Engine', true], ['ML Classifier', true], ['LLM Judge', true], ['Policy Engine', true], ['SSE Stream', sseConnected]
         ].map(([label, ok]) => (
-          <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
-            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.625rem', color: 'rgba(240,240,248,0.38)' }}>{label}</span>
-            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.575rem', fontWeight: 700, color: ok ? '#00FF94' : '#FF3D5A', letterSpacing: '0.05em' }}>{ok ? '● LIVE' : '● ERR'}</span>
+          <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.6rem', color: 'rgba(240,240,248,0.38)' }}>{label}</span>
+            <span style={{ fontFamily: 'JetBrains Mono', fontSize: '0.55rem', fontWeight: 700, color: ok ? '#00FF94' : '#FF3D5A', letterSpacing: '0.05em' }}>{ok ? '● LIVE' : '● ERR'}</span>
           </div>
         ))}
       </div>
+
+      {/* Agent Token Panel toggle */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <button
+          onClick={() => setShowTokenPanel(p => !p)}
+          style={{ width: '100%', padding: '0.65rem 1.25rem', background: showTokenPanel ? 'rgba(99,102,241,0.1)' : 'transparent', border: 'none', borderBottom: showTokenPanel ? '1px solid rgba(99,102,241,0.15)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, color: showTokenPanel ? '#818cf8' : 'rgba(240,240,248,0.35)', fontSize: '0.75rem', fontWeight: 600, transition: 'all 150ms' }}
+        >
+          <span>⚡</span> Agent Token {showTokenPanel ? '▲' : '▼'}
+        </button>
+        {showTokenPanel && <SessionTokenPanel />}
+      </div>
+
+      {/* User info + logout */}
+      {user && (
+        <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a5b4fc', fontSize: 11, fontWeight: 700, flexShrink: 0, overflow: 'hidden' }}>
+            {user.name?.[0]?.toUpperCase() || '?'}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name || user.email}</div>
+            <div style={{ fontSize: '0.58rem', color: '#6366f1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{user.role?.replace('_', ' ')}</div>
+          </div>
+          <button onClick={logout} style={{ background: 'none', border: 'none', color: 'rgba(240,240,248,0.25)', cursor: 'pointer', fontSize: 14, padding: 4, borderRadius: 4 }} title="Logout">⏻</button>
+        </div>
+      )}
     </aside>
   );
 }
@@ -443,12 +477,25 @@ function PolicyPage() {
 
 // ── Root App ─────────────────────────────────────────────────────────────────
 export default function App() {
+  const { isAuthenticated, loading } = useAuth();
   const [tab, setTab] = useState('demo');
   const [stats, fetchStats] = useStats(2000);
   const [events, sseConnected] = useSSE();
 
   const blockRate = stats.total_screened > 0 ? ((stats.blocked / stats.total_screened) * 100).toFixed(1) : '0.0';
   const riskColor = stats.average_risk_score >= 0.7 ? '#FF3D5A' : stats.average_risk_score >= 0.4 ? '#F59E0B' : '#00FF94';
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#04060F', color: 'rgba(240,240,248,0.3)', fontFamily: 'JetBrains Mono', fontSize: '0.8rem', letterSpacing: '0.1em' }}>
+        INITIALIZING...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return <LoginPage />;
+
+  const pageTitles = { demo: 'Live Demo', audit: 'Audit Log', policy: 'Policy Engine', users: 'User Management' };
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#04060F' }}>
@@ -467,7 +514,7 @@ export default function App() {
           <MetricNum label="Avg Risk" value={stats.average_risk_score} color={riskColor} decimals={2} />
           <div style={{ marginLeft: 'auto', textAlign: 'right', paddingLeft: '1.5rem' }}>
             <div style={{ fontFamily: 'Plus Jakarta Sans', fontWeight: 700, fontSize: '0.8rem', color: 'rgba(240,240,248,0.8)' }}>
-              {{ demo: 'Live Demo', audit: 'Audit Log', policy: 'Policy Engine' }[tab]}
+              {pageTitles[tab] || tab}
             </div>
             <div style={{ fontFamily: 'JetBrains Mono', fontSize: '0.55rem', color: 'rgba(240,240,248,0.22)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 2 }}>Sentinel Layer v0.1.0</div>
           </div>
@@ -478,6 +525,7 @@ export default function App() {
           {tab === 'demo' && <LiveDemoPage events={events} onStatsChange={fetchStats} />}
           {tab === 'audit' && <AuditPage />}
           {tab === 'policy' && <PolicyPage />}
+          {tab === 'users' && <AdminPanel />}
         </div>
       </div>
     </div>

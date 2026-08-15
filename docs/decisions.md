@@ -216,10 +216,26 @@ confirmed. Human sign-off is still required before opening Phase 1 per
 - Ran `python -m scripts.run_demo_suite` — **100% Passed End-to-End without errors**.
 - Ran `pytest` — **40/40 tests passed** in 36.73s.
 
+---
 
+## Phase 10 — Auth, RBAC, Agent Session Tokens & Python SDK
 
+**What was built:**
+- **Hierarchical RBAC & SQLite Schema**: Implemented 4 roles (`admin`, `tech_lead`, `developer`, `intern`) with default tool matrices. Added `users`, `user_permissions`, `agent_sessions` tables and extended `screen_events` with user identity columns (`user_id`, `user_email`, `user_role`).
+- **OAuth & JWT Auth Service**: Direct Google and GitHub OAuth flow with callback redirection, JWT token issuance, and `seed_admin` CLI tool for manual bootstrap.
+- **Agent Session Token Architecture**: 8-hour signed JWTs that AI agents present on `X-Sentinel-Token`. Permissions and role are cryptographically baked in, verifiable on [jwt.io](https://jwt.io).
+- **Stage 0 Hard Permission Check in `/screen`**: Pre-cascade evaluation that immediately hard-blocks unauthorized tool calls (e.g. Intern invoking `write_file`) with zero ML/LLM latency and zero compute cost. Backward-compatible with tokenless legacy requests.
+- **Sentinel Python SDK (`sentinel_sdk`)**: Production client package exposing `SentinelGuard` with `run_tool()`, `screen()`, and LangChain `SentinelToolWrapper`.
+- **PDF White-Text Indirect Injection Demo**: Generated realistic invoice PDF (`demos/pdf_injection/invoice_poisoned.pdf`) with hidden white-text `[INST]` instructions and verified automated detection with `demos/pdf_injection/demo_agent.py`.
+- **Frontend Auth Layer & Management Console**: Built `LoginPage.jsx` with floating canvas particles and OAuth buttons, `AdminPanel.jsx` with instant permission toggle switches, and `SessionTokenPanel.jsx` for token generation and raw/decoded payload inspection.
+- **Complete Postman Test Suite**: Built `docs/sentinel_api.postman_collection.json` containing 11 folders and automated test assertions across all roles.
 
+**Technical decisions made, and why:**
+- **Stage 0 Pre-Cascade Evaluation**: Placing permission enforcement at Stage 0 ensures unauthorized actions from lower-privilege roles (like Interns) are blocked in <1ms without invoking expensive embeddings or LLM inference.
+- **Signed Tokens for Agent Identity**: Tokens embed permission snapshots so Sentinel nodes can validate privileges statelessly while retaining revocation tracking in SQLite.
+- **ASCII Output Formatting**: Ensured CLI scripts use ASCII fallbacks (`->`, `*`) for seamless cross-platform execution on Windows `cp1252` terminals.
 
-
-
-
+**Verification (this session):**
+- Full backend pytest suite: **55/55 tests passed** in 20.82s.
+- Frontend Vite production build: **100% successful** (0 errors).
+- End-to-end PDF indirect injection demo verified: **100% intercepted (verdict: BLOCK, risk: 0.99)**.

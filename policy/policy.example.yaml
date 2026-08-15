@@ -1,12 +1,22 @@
-# policy.example.yaml — reference only (Phase 0).
-# Real enforcement (Policy Engine, is_allowed()) is Phase 5 scope — see
-# PHASE.md. This file shows the intended shape so Phase 5 has a concrete
-# target and API.md's policy_check examples stay consistent with it.
+# policy.example.yaml — declarative tool authorization policy for Sentinel Layer
+# Evaluated by Policy Engine (Phase 5+). Deny-by-default for undeclared tools.
 
 tools:
   read_email:
     allowed: true
     scope: read_only
+    conditions:
+      max_calls_per_session: 20
+
+  search_web:
+    allowed: true
+    scope: read_only
+    conditions:
+      max_calls_per_session: 50
+
+  execute_sql:
+    allowed: true
+    scope: restricted
     conditions:
       max_calls_per_session: 20
 
@@ -16,7 +26,7 @@ tools:
     conditions:
       allowed_paths:
         - "/sandbox/**"
-      max_calls_per_session: 5
+      max_calls_per_session: 10
 
   call_http:
     allowed: true
