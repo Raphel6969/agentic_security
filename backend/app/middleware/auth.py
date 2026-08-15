@@ -103,33 +103,59 @@ def require_role(*allowed_roles: str):
     return _check
 
 
-# ── Agent session token ────────────────────────────────────────────────────────
-
 async def read_agent_token(
     x_sentinel_token: Optional[str] = Header(default=None, alias="X-Sentinel-Token"),
+    authorization: Optional[str] = Header(default=None, alias="Authorization"),
     db: Session = Depends(_get_db),
 ) -> Optional[dict]:
     """
-    Reads the X-Sentinel-Token header for /screen calls.
-    Returns decoded payload dict if valid and not revoked, else None.
-    Raises 401 only on tampered/expired tokens (not on missing token — backward-compatible).
+    Reads agent token from either X-Sentinel-Token header or Authorization: Bearer header.
+    Supports both issued Agent Session Tokens and Dashboard User Tokens for seamless Postman testing.
+    Returns decoded payload dict with sub, email, role, and permissions.
     """
-    if not x_sentinel_token:
+    raw_token = x_sentinel_token
+    if not raw_token and authorization:
+        if authorization.startswith("Bearer "):
+            raw_token = authorization.replace("Bearer ", "", 1).strip()
+        else:
+            raw_token = authorization.strip()
+
+    if not raw_token:
         return None  # No token — backward compatible, cascade runs normally
 
     try:
-        from app.services.auth import decode_agent_token
-        payload = decode_agent_token(x_sentinel_token)
+        from app.services.auth import decode_token, resolve_permissions
+        payload = decode_token(raw_token)
     except JWTError:
-        raise HTTPException(status_code=401, detail="Agent session token is invalid or expired.")
-    except ValueError as e:
+        raise HTTPException(status_code=401, detail="Token is invalid or expired.")
+    except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
 
-    # Revocation check
-    jti = payload.get("jti")
-    if jti:
-        session_row = db.query(AgentSessionDB).filter(AgentSessionDB.jti == jti).first()
-        if session_row and session_row.is_revoked:
-            raise HTTPException(status_code=401, detail="Agent session token has been revoked.")
+    token_type = payload.get("type", "")
+
+    # If it's a dashboard token (e.g. copied from login or auth header in Postman)
+    if token_type == "dashboard":
+        user_id = payload.get("sub", "")
+        user = db.query(UserDB).filter(UserDB.id == user_id, UserDB.is_active == True).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="Authenticated user not found.")
+        overrides = [(p.action, p.allowed) for p in user.permissions]
+        perms = resolve_permissions(user.role, overrides)
+        return {
+            "sub": user.id,
+            "email": user.email,
+            "role": user.role,
+            "permissions": perms,
+            "session_id": "dashboard_session",
+            "type": "dashboard",
+        }
+
+    # If it's an agent_session token, check revocation
+    if token_type == "agent_session":
+        jti = payload.get("jti")
+        if jti:
+            session_row = db.query(AgentSessionDB).filter(AgentSessionDB.jti == jti).first()
+            if session_row and session_row.is_revoked:
+                raise HTTPException(status_code=401, detail="Agent session token has been revoked.")
 
     return payload

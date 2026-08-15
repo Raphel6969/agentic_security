@@ -2,10 +2,12 @@
 /screen router for Sentinel Layer.
 
 Phase 10 scope: Stage 0 (token permission check) added before 3-stage cascade.
-- If X-Sentinel-Token present: validates token, checks tool permission, tags events with user identity.
+- If X-Sentinel-Token / Bearer token present: validates token, checks tool permission, tags events with user identity.
 - If no token: backward-compatible, runs full 3-stage cascade as before.
 - Stage 0 block is instant (zero ML/LLM cost).
+- Guaranteed full ID and timestamp serialization for instant real-time audit log synchronization.
 """
+from datetime import datetime, timezone
 import json
 import logging
 from typing import Optional
@@ -59,7 +61,7 @@ async def screen_content(
                 f"Stage 0 Permission Block: Role '{user_role}' does not have permission "
                 f"to call '{tool_name}'. Blocked before cascade. No ML/LLM cost incurred."
             )
-            _log_event(
+            event_id, event_ts = _log_event(
                 agent_id=agent_id, session_id=session_id, tool_name=tool_name,
                 incoming_source=request.incoming_content.source,
                 risk_score=0.0, verdict="block",
@@ -69,11 +71,21 @@ async def screen_content(
             )
             from app.routers.events import broadcast_event
             broadcast_event({
-                "type": "SCREEN_DECISION", "agent_id": agent_id, "session_id": session_id,
-                "tool_name": tool_name, "incoming_source": request.incoming_content.source,
-                "risk_score": 0.0, "verdict": "block", "explanation": explanation,
-                "matched_signals": [], "policy_check": {"allowed": False, "reason": "Token permission denied."},
-                "user_id": user_id, "user_email": user_email, "user_role": user_role,
+                "id": event_id,
+                "timestamp": event_ts,
+                "type": "SCREEN_DECISION",
+                "agent_id": agent_id,
+                "session_id": session_id,
+                "tool_name": tool_name,
+                "incoming_source": request.incoming_content.source,
+                "risk_score": 0.0,
+                "verdict": "block",
+                "explanation": explanation,
+                "matched_signals": [],
+                "policy_check": {"allowed": False, "reason": "Token permission denied."},
+                "user_id": user_id,
+                "user_email": user_email,
+                "user_role": user_role,
                 "stage_0_block": True,
             })
             return ScreenResponse(
@@ -149,7 +161,7 @@ async def screen_content(
     # ── Audit + SSE Broadcast ─────────────────────────────────────────────────
     signals_json = json.dumps([s.model_dump() for s in matched_signals])
     try:
-        _log_event(
+        event_id, event_ts = _log_event(
             agent_id=agent_id, session_id=session_id, tool_name=tool_name,
             incoming_source=request.incoming_content.source,
             risk_score=risk_score, verdict=verdict,
@@ -159,12 +171,21 @@ async def screen_content(
         )
         from app.routers.events import broadcast_event
         broadcast_event({
-            "type": "SCREEN_DECISION", "agent_id": agent_id, "session_id": session_id,
-            "tool_name": tool_name, "incoming_source": request.incoming_content.source,
-            "risk_score": risk_score, "verdict": verdict, "explanation": explanation,
+            "id": event_id,
+            "timestamp": event_ts,
+            "type": "SCREEN_DECISION",
+            "agent_id": agent_id,
+            "session_id": session_id,
+            "tool_name": tool_name,
+            "incoming_source": request.incoming_content.source,
+            "risk_score": risk_score,
+            "verdict": verdict,
+            "explanation": explanation,
             "matched_signals": [s.model_dump() for s in matched_signals],
             "policy_check": policy_check.model_dump(),
-            "user_id": user_id, "user_email": user_email, "user_role": user_role,
+            "user_id": user_id,
+            "user_email": user_email,
+            "user_role": user_role,
         })
     except Exception as err:
         logger.warning("Failed to log screen event: %s", err)
@@ -183,13 +204,17 @@ def _log_event(
     risk_score: float, verdict: str, explanation: str,
     matched_signals_json: str, policy_allowed: bool, policy_reason: str,
     user_id: Optional[str] = None, user_email: Optional[str] = None, user_role: Optional[str] = None,
-) -> None:
+) -> tuple[int, str]:
     with SessionLocal() as db:
-        db.add(ScreenEventDB(
+        event = ScreenEventDB(
             agent_id=agent_id, session_id=session_id, tool_name=tool_name,
             incoming_source=incoming_source, risk_score=risk_score, verdict=verdict,
             explanation=explanation, matched_signals_json=matched_signals_json,
             policy_allowed=policy_allowed, policy_reason=policy_reason,
             user_id=user_id, user_email=user_email, user_role=user_role,
-        ))
+        )
+        db.add(event)
         db.commit()
+        db.refresh(event)
+        ts_str = event.timestamp.isoformat() if event.timestamp else datetime.now(timezone.utc).isoformat()
+        return event.id, ts_str

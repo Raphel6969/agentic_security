@@ -442,8 +442,7 @@ function LiveDemoPage({ events, onStatsChange }) {
   );
 }
 
-// ── Audit Page ───────────────────────────────────────────────────────────────
-function AuditPage() {
+function AuditPage({ activeTab }) {
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [total, setTotal] = useState(0);
@@ -452,8 +451,8 @@ function AuditPage() {
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
 
-  const load = async () => {
-    setLoading(true);
+  const load = useCallback(async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     setFetchError(null);
     try {
       const r = await apiFetch(`/events/history?limit=300${verdict ? `&verdict=${verdict}` : ''}`);
@@ -464,11 +463,20 @@ function AuditPage() {
     } catch (err) {
       setFetchError(err.message || 'Failed to connect to backend.');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
-  };
+  }, [verdict]);
 
-  useEffect(() => { load(); }, [verdict]);
+  // Initial load and whenever filter/tab changes
+  useEffect(() => {
+    load(true);
+  }, [verdict, activeTab, load]);
+
+  // Auto-poll every 2.5s so Postman calls flash onto screen immediately
+  useEffect(() => {
+    const t = setInterval(() => load(false), 2500);
+    return () => clearInterval(t);
+  }, [load]);
 
   const filtered = events.filter(e => {
     if (!search) return true;
@@ -671,7 +679,7 @@ export default function App() {
         {/* Active Tab View */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 1.75rem' }}>
           {tab === 'demo' && <LiveDemoPage events={events} onStatsChange={fetchStats} />}
-          {tab === 'audit' && <AuditPage />}
+          {tab === 'audit' && <AuditPage activeTab={tab} />}
           {tab === 'policy' && <PolicyPage activeTab={tab} />}
           {tab === 'tokens' && <SessionTokenPanel />}
           {tab === 'users' && <AdminPanel />}
