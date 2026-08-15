@@ -14,6 +14,7 @@ from urllib.parse import urlencode
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 
 from app.config import get_settings
 from app.db.models import UserDB
@@ -203,6 +204,61 @@ async def github_callback(code: str | None = None, error: str | None = None):
         jwt_token = create_access_token(user.id, user.email, user.role)
 
     return RedirectResponse(f"{settings.frontend_url}/?token={jwt_token}")
+
+
+# ── /auth/demo-login ──────────────────────────────────────────────────────────
+
+class DemoLoginRequest(BaseModel):
+    role: str = "admin"  # "admin" | "tech_lead" | "developer" | "intern"
+
+
+@router.post("/demo-login")
+async def demo_login(req: DemoLoginRequest = DemoLoginRequest()):
+    """
+    1-Click Demo Login: instantly issues a signed JWT for testing any role
+    without requiring third-party OAuth configuration.
+    """
+    valid_roles = {"admin", "tech_lead", "developer", "intern"}
+    role = req.role if req.role in valid_roles else "admin"
+
+    demo_profiles = {
+        "admin": ("saswat20061103@gmail.com", "Saswat (Admin)"),
+        "tech_lead": ("lead@sentinel.io", "Tech Lead"),
+        "developer": ("dev@sentinel.io", "Developer Alex"),
+        "intern": ("intern@sentinel.io", "Intern Sam"),
+    }
+
+    email, name = demo_profiles.get(role, demo_profiles["admin"])
+
+    with SessionLocal() as db:
+        user = db.query(UserDB).filter(UserDB.email == email).first()
+        if not user:
+            import uuid
+            user = UserDB(
+                id=str(uuid.uuid4()),
+                email=email,
+                name=name,
+                role=role,
+                is_active=True,
+                oauth_provider="demo",
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        jwt_token = create_access_token(user.id, user.email, user.role)
+        permissions = _get_user_permissions(user)
+
+        return {
+            "token": jwt_token,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "name": user.name,
+                "role": user.role,
+                "permissions": permissions,
+            },
+        }
 
 
 # ── /auth/me ──────────────────────────────────────────────────────────────────

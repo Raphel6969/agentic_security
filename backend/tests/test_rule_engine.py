@@ -72,7 +72,7 @@ def test_screen_endpoint_blocks_injection():
 
 def test_screen_endpoint_allows_clean_input():
     payload = {
-        "agent_context": {"agent_id": "agent_1", "session_id": "session_1"},
+        "agent_context": {"agent_id": "agent_clean", "session_id": "session_clean_rule_test"},
         "incoming_content": {
             "source": "user_input",
             "text": "Can you check my schedule for tomorrow?",
