@@ -608,9 +608,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             className="flex items-center gap-2.5 group cursor-pointer hover:opacity-90 transition-all text-left"
             title="Return to Landing Page"
           >
-            <div className="w-9 h-9 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(45,212,191,0.2)]">
-              <Shield className="w-5 h-5 text-teal-400" />
-            </div>
+            <img 
+              src="/kyron_logo.png" 
+              alt="Kyron" 
+              className="w-9 h-9 rounded-xl object-cover shadow-[0_0_15px_rgba(45,212,191,0.25)] group-hover:scale-105 transition-transform" 
+            />
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-display font-black text-white text-base tracking-wider">KYRON</span>

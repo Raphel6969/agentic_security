@@ -52,11 +52,11 @@ export const Navbar: React.FC<NavbarProps> = ({
         
         {/* Brand Logo */}
         <a href="#" className="flex items-center gap-2.5 group">
-          <div className="relative w-8 h-8 rounded-xl bg-gradient-to-br from-teal-400 to-indigo-600 p-[1px] shadow-md shadow-teal-500/20">
-            <div className="w-full h-full bg-[#020617] rounded-[11px] flex items-center justify-center transition-colors group-hover:bg-slate-900">
-              <Shield className="w-4 h-4 text-teal-300" />
-            </div>
-          </div>
+          <img 
+            src="/kyron_logo.png" 
+            alt="Kyron" 
+            className="w-8 h-8 rounded-xl object-cover shadow-md shadow-teal-500/20 group-hover:scale-105 transition-transform" 
+          />
           <span className="font-display font-black text-lg tracking-wider text-white">KYRON</span>
         </a>
 

@@ -9,9 +9,11 @@ export const Footer: React.FC = () => {
         {/* Brand & Mission Statement */}
         <div className="space-y-3 max-w-sm">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md">
-              <Shield className="w-4 h-4 text-teal-400" />
-            </div>
+            <img 
+              src="/kyron_logo.png" 
+              alt="Kyron" 
+              className="w-8 h-8 rounded-xl object-cover shadow-sm" 
+            />
             <div>
               <span className="font-display font-bold text-lg text-white">KYRON</span>
               <span className="block text-[11px] font-mono text-slate-400 uppercase">Agent Runtime Security</span>

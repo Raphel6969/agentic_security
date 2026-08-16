@@ -894,9 +894,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
                   ← Back
                 </button>
               )}
-              <div className="w-12 h-12 rounded-2xl bg-cyan-950/80 border border-cyan-500/40 flex items-center justify-center mb-4 shadow-[0_0_25px_rgba(6,182,212,0.3)]">
-                <Shield className="w-6 h-6 text-cyan-300" />
-              </div>
+              <img 
+                src="/kyron_logo.png" 
+                alt="Kyron" 
+                className="w-14 h-14 rounded-2xl object-cover mb-4 shadow-[0_0_25px_rgba(6,182,212,0.4)] border border-cyan-500/40" 
+              />
 
               {/* Main Title */}
               <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-white tracking-tight">
