@@ -327,7 +327,7 @@ export const InteractiveDemoModal: React.FC<InteractiveDemoModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-display font-black text-white text-sm tracking-wider">SENTINEL</span>
+                <span className="font-display font-black text-white text-sm tracking-wider">KYRON</span>
                 <span className="text-[10px] text-slate-400 font-mono uppercase tracking-widest">AI Security Console</span>
               </div>
             </div>

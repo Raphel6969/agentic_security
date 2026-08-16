@@ -196,7 +196,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenDemo, reducedMotion }) => {
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-black text-white tracking-tight leading-[1.1] max-w-4xl">
           Your AI can make decisions.{' '}
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-300 via-white to-slate-400 block sm:inline">
-            Sentinel makes sure they are safe.
+            Kyron makes sure they are safe.
           </span>
         </h1>
 
@@ -289,7 +289,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenDemo, reducedMotion }) => {
                 </div>
                 <span className="text-xs font-mono text-slate-300 flex items-center gap-1.5">
                   <Shield className="w-3.5 h-3.5 text-teal-400" />
-                  <span>SENTINEL_GATEWAY :: /screen</span>
+                  <span>KYRON_GATEWAY :: /screen</span>
                 </span>
               </div>
 
@@ -337,7 +337,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenDemo, reducedMotion }) => {
               {/* Node 2: Sentinel Runtime Interceptor (Hero Focus) */}
               <div className="rounded-2xl p-4 bg-white/10 border border-teal-500/40 backdrop-blur-xl shadow-lg shadow-teal-500/10 flex flex-col justify-between relative glow-teal">
                 <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-teal-500 to-indigo-600 text-white text-[9px] font-mono font-bold uppercase tracking-wider shadow-md">
-                  SENTINEL GATEWAY
+                  KYRON GATEWAY
                 </div>
                 
                 <div className="flex items-center justify-between text-xs font-mono text-slate-200 mt-1">

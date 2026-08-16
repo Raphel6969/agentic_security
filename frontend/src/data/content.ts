@@ -93,10 +93,10 @@ export const ARCHITECTURE_PHASES: ArchitecturePhase[] = [
   {
     phase: 2,
     id: 'phase-gateway',
-    title: 'Sentinel Gateway Opens',
+    title: 'Kyron Gateway Opens',
     subtitle: 'Runtime Interception',
     description: 'The central security gateway intercepts the payload at `/screen`. The outer perimeter expands to reveal the 4 security layers.',
-    technicalLabel: 'SENTINEL /SCREEN RUNTIME GATEWAY',
+    technicalLabel: 'KYRON /SCREEN RUNTIME GATEWAY',
     layer: 'SYSTEM',
     activeNodes: ['agent', 'gateway'],
     metrics: { status: 'ACTIVE_INTERCEPTION', latency: '0.4ms' }

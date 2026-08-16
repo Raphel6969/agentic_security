@@ -57,7 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Shield className="w-4 h-4 text-teal-300" />
             </div>
           </div>
-          <span className="font-display font-black text-lg tracking-wider text-white">SENTINEL</span>
+          <span className="font-display font-black text-lg tracking-wider text-white">KYRON</span>
         </a>
 
         {/* Minimal Navigation Links */}

@@ -27,7 +27,7 @@ export const SocControlRoom: React.FC = () => {
       tool: item.tool_name || 'unknown_tool',
       riskScore: Number(item.risk_score || 0),
       verdict: (item.verdict?.toUpperCase() as any) || 'ALLOW',
-      explanation: item.explanation || 'Screened via Sentinel 3-Stage Cascade',
+      explanation: item.explanation || 'Screened via Kyron 3-Stage Cascade',
       policyReason: item.policy_reason || (item.policy_allowed ? 'Allowed by declarative policy.' : 'Blocked by policy rule.'),
       matchedSignals: Array.isArray(item.matched_signals)
         ? item.matched_signals.map((s) => (typeof s === 'string' ? s : s.signal || s.stage || JSON.stringify(s)))
@@ -110,7 +110,7 @@ export const SocControlRoom: React.FC = () => {
             </span>
           </h2>
           <p className="mt-4 text-sm sm:text-base text-slate-300/90 leading-relaxed font-sans">
-            Every screening decision becomes a live security event that can be monitored, investigated, and audited from the Sentinel control room.
+            Every screening decision becomes a live security event that can be monitored, investigated, and audited from the Kyron control room.
           </p>
         </div>
 
@@ -123,7 +123,7 @@ export const SocControlRoom: React.FC = () => {
               <div className="w-3 h-3 rounded-full bg-teal-400 animate-ping" />
               <div>
                 <div className="text-xs font-mono font-bold text-white flex items-center gap-2">
-                  <span>SENTINEL SOC COMMAND CENTER</span>
+                  <span>KYRON SOC COMMAND CENTER</span>
                   <span className="px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 text-[10px] font-semibold border border-teal-500/30">LIVE FEED (SSE)</span>
                 </div>
                 <span className="text-[11px] font-mono text-slate-400">Active Gateway: cluster-us-east-01</span>

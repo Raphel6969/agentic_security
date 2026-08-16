@@ -26,7 +26,7 @@ export const DetectionCascade: React.FC = () => {
       subtitle: 'Understand meaning, not just words.',
       tech: 'all-MiniLM-L6-v2 + TurboQuant 8-bit vectors',
       latency: '< 1.8ms',
-      description: 'Sentinel converts incoming content into dense 384-dimensional embeddings and performs nearest-neighbor search against an in-memory quantized database of prompt injection vectors.',
+      description: 'Kyron converts incoming content into dense 384-dimensional embeddings and performs nearest-neighbor search against an in-memory quantized database of prompt injection vectors.',
       spec: [
         '384-dimension vector embeddings',
         'TurboQuant 8-bit quantized cosine index',
@@ -69,7 +69,7 @@ export const DetectionCascade: React.FC = () => {
             </span>
           </h2>
           <p className="mt-4 text-sm sm:text-base text-slate-300/90 leading-relaxed font-sans">
-            Sentinel optimizes the security pipeline by cascading from ultra-fast deterministic rules to local quantized semantic vectors, escalating to LLM judges only when truly ambiguous.
+            Kyron optimizes the security pipeline by cascading from ultra-fast deterministic rules to local quantized semantic vectors, escalating to LLM judges only when truly ambiguous.
           </p>
         </div>
 

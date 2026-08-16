@@ -21,7 +21,7 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({ onOpenDemo }) => {
         </h2>
 
         <p className="mt-5 text-sm sm:text-base text-slate-300/90 max-w-2xl mx-auto leading-relaxed font-sans">
-          Explore the architecture, simulate an attack, and see how Sentinel turns an autonomous agent's most dangerous capability — taking action — into a controlled, auditable operation.
+          Explore the architecture, simulate an attack, and see how Kyron turns an autonomous agent's most dangerous capability — taking action — into a controlled, auditable operation.
         </p>
 
         {/* Buttons */}

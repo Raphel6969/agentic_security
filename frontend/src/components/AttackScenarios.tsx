@@ -87,14 +87,14 @@ export const AttackScenarios: React.FC = () => {
                 </div>
               </div>
               <div className="mt-4 pt-3 border-t border-white/10 text-[11px] font-mono text-rose-400 font-semibold">
-                Without Sentinel: Malicious Execution
+                Without Kyron: Malicious Execution
               </div>
             </div>
 
-            {/* Step 3: Sentinel Interception Details */}
+            {/* Step 3: Kyron Interception Details */}
             <div className="rounded-2xl p-5 bg-white/5 border border-teal-500/30 flex flex-col justify-between backdrop-blur-sm shadow-md">
               <div>
-                <div className="text-xs font-mono text-slate-200 uppercase mb-2 font-semibold">3. Sentinel Layer Interception</div>
+                <div className="text-xs font-mono text-slate-200 uppercase mb-2 font-semibold">3. Kyron Layer Interception</div>
                 <div className="space-y-2 text-xs font-mono">
                   <div className="text-slate-400">Risk Score: <span className="text-white font-bold">{selectedScenario.sentinelOutcome.riskScore}</span></div>
                   {selectedScenario.sentinelOutcome.ruleMatch && (

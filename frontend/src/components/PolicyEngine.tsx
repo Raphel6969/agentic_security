@@ -16,7 +16,7 @@ export const PolicyEngine: React.FC = () => {
             Even a "safe" action can be forbidden.
           </h2>
           <p className="mt-4 text-sm sm:text-base text-slate-300/90 leading-relaxed font-sans">
-            Sentinel maintains a deterministic policy layer that evaluates what the agent is actually authorized to do, regardless of how friendly the prompt appears or how confident the model sounds.
+            Kyron maintains a deterministic policy layer that evaluates what the agent is actually authorized to do, regardless of how friendly the prompt appears or how confident the model sounds.
           </p>
         </div>
 

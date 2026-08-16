@@ -34,7 +34,7 @@ export const RiskFusion: React.FC = () => {
             </span>
           </h2>
           <p className="mt-5 text-base sm:text-lg text-slate-400 leading-relaxed">
-            Sentinel combines available security signals into a bounded risk score. Ambiguous cases can be escalated to the LLM judge, while deterministic policy violations remain independently enforceable.
+            Kyron combines available security signals into a bounded risk score. Ambiguous cases can be escalated to the LLM judge, while deterministic policy violations remain independently enforceable.
           </p>
         </div>
 

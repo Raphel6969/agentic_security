@@ -18,7 +18,7 @@ export const TechStack: React.FC = () => {
               Eight phases. One working security system.
             </h2>
             <p className="mt-4 text-sm sm:text-base text-slate-300/90 leading-relaxed font-sans">
-              Sentinel is fully operational with active runtime interception, three-stage cascade screening, deterministic policy enforcement, and live SOC telemetry.
+              Kyron is fully operational with active runtime interception, three-stage cascade screening, deterministic policy enforcement, and live SOC telemetry.
             </p>
           </div>
 

@@ -274,7 +274,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         risk: Number(sseEvent.risk_score !== undefined ? sseEvent.risk_score : 0),
         verdict: (sseEvent.verdict?.toUpperCase() as any) || (sseEvent.risk_score > 0.7 ? 'BLOCK' : 'ALLOW'),
         reason: sseEvent.explanation || sseEvent.security_summary || 'Real-time telemetry event.',
-        rule: sseEvent.scenario_id ? `SCENARIO_0${sseEvent.scenario_id}` : (sseEvent.rule || 'SENTINEL_CASCADE')
+        rule: sseEvent.scenario_id ? `SCENARIO_0${sseEvent.scenario_id}` : (sseEvent.rule || 'KYRON_CASCADE')
       };
 
       setLiveStreamEvents((prev) => [newStreamItem, ...prev.slice(0, 49)]);
@@ -299,13 +299,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {
           id: newStreamItem.id,
           timestamp: new Date().toISOString(),
-          agent_id: currentUser?.name ? `${currentUser.name.toLowerCase().replace(/\s+/g, '_')}_agent` : 'sentinel_agent',
+          agent_id: currentUser?.name ? `${currentUser.name.toLowerCase().replace(/\s+/g, '_')}_agent` : 'kyron_agent',
           tool_name: newStreamItem.tool,
           risk_score: newStreamItem.risk,
           verdict: newStreamItem.verdict,
           explanation: newStreamItem.reason,
           matched_signals: [{ signal: newStreamItem.rule, stage: 'Cascade' }],
-          user_email: currentUser?.email || 'operator@sentinel.sec',
+          user_email: currentUser?.email || 'operator@kyron.sec',
           user_role: currentUser?.role || 'admin'
         },
         ...prev
@@ -417,7 +417,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {
             id: Number(Date.now().toString().slice(-6)),
             timestamp: new Date().toISOString(),
-            agent_id: 'sentinel_agent',
+            agent_id: 'kyron_agent',
             session_id: `session_s0${scenarioNumber}`,
             tool_name: pr.tool_name || scenario.proposedAction.tool,
             incoming_source: res.incoming_content?.source || 'user_input',
@@ -427,7 +427,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             matched_signals: sr.matched_signals || [{ signal: `SCENARIO_0${scenarioNumber}`, stage: 'Rule Engine' }],
             policy_allowed: !vUpper.includes('BLOCK'),
             policy_reason: vUpper === 'BLOCK' ? 'Attack threat blocked' : 'Policy allow',
-            user_email: currentUser?.email || 'dev.ai@sentinel.sec',
+            user_email: currentUser?.email || 'dev.ai@kyron.sec',
             user_role: currentUser?.role || 'developer'
           },
           ...prev
@@ -532,7 +532,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(auditLogs, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `sentinel_audit_logs_${Date.now()}.json`);
+    downloadAnchor.setAttribute("download", `kyron_audit_logs_${Date.now()}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -598,10 +598,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     <div className={`min-h-screen w-full bg-[#020617] text-slate-100 flex flex-col font-mono overflow-hidden ${reducedMotion ? 'reduced-motion' : ''}`}>
       
       {/* ── Top Global Application Bar ────────────────────────────────────────── */}
-      <header className="w-full h-16 bg-slate-950/90 border-b border-white/10 px-4 sm:px-6 flex items-center justify-between gap-4 z-20 backdrop-blur-xl shrink-0">
+      <header className="h-16 px-4 sm:px-6 bg-slate-950/90 border-b border-white/10 flex items-center justify-between z-30 shrink-0 backdrop-blur-xl">
         
-        {/* Left: Logo & Status */}
-        <div className="flex items-center gap-3">
+        {/* Left: Platform Title & Brand */}
+        <div className="flex items-center gap-4">
           <button 
             type="button" 
             onClick={onBackToLanding}
@@ -613,7 +613,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-display font-black text-white text-base tracking-wider">SENTINEL</span>
+                <span className="font-display font-black text-white text-base tracking-wider">KYRON</span>
                 <span className="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 text-[10px] font-bold border border-teal-500/30 hidden sm:inline">
                   SOC CONSOLE
                 </span>
@@ -834,7 +834,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <h3 className="text-sm font-bold text-white uppercase tracking-wider">
                       Attack Vector Simulator
                     </h3>
-                    <p className="text-xs text-slate-400">Execute single test threats against the Sentinel cascade.</p>
+                    <p className="text-xs text-slate-400">Execute single test threats against the Kyron cascade.</p>
                   </div>
                   <button
                     type="button"

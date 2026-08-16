@@ -16,7 +16,7 @@ export const WhatIsSentinel: React.FC = () => {
             A runtime firewall between intent and action.
           </h2>
           <p className="mt-4 text-sm sm:text-base text-slate-300/90 leading-relaxed font-sans">
-            Sentinel intercepts every proposed agent action, validates it through two complementary layers, and enforces one definitive verdict:
+            Kyron intercepts every proposed agent action, validates it through two complementary layers, and enforces one definitive verdict:
           </p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs font-mono">
             <span className="px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 font-bold">ALLOW</span>

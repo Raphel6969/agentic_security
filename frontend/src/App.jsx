@@ -224,7 +224,7 @@ function Sidebar({ tab, setTab, realtimeConnected, transport }) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </div>
           <div>
-            <div style={{ fontFamily: 'Plus Jakarta Sans', fontWeight: 800, fontSize: '0.85rem', color: '#F0F0F8', letterSpacing: '-0.01em', lineHeight: 1 }}>SENTINEL</div>
+            <div style={{ fontFamily: 'Plus Jakarta Sans', fontWeight: 800, fontSize: '0.85rem', color: '#F0F0F8', letterSpacing: '-0.01em', lineHeight: 1 }}>KYRON</div>
             <div style={{ fontFamily: 'JetBrains Mono', fontSize: '0.5rem', color: 'rgba(240,240,248,0.3)', letterSpacing: '0.15em', textTransform: 'uppercase', marginTop: 3 }}>AI Security Console</div>
           </div>
         </div>
@@ -421,9 +421,9 @@ function LiveDemoPage({ events, onStatsChange }) {
                 <div style={{ fontFamily: 'JetBrains Mono', fontSize: '0.65rem', color: 'rgba(240,240,248,0.7)', lineHeight: 1.4 }}>{unprotected?.action_outcome}</div>
               </div>
 
-              {/* Sentinel Protected */}
-              <div style={{ background: 'rgba(0,255,148,0.05)', border: '1px solid rgba(0,255,148,0.2)', borderRadius: 8, padding: '0.85rem' }}>
-                <div style={{ fontFamily: 'JetBrains Mono', fontSize: '0.6rem', color: '#00FF94', fontWeight: 700, marginBottom: 6, textTransform: 'uppercase' }}>🛡️ Sentinel Protected</div>
+              {/* Kyron Protected */}
+              <div style={{ padding: '0.875rem', borderRadius: 8, background: 'rgba(0,255,148,0.03)', border: '1px solid rgba(0,255,148,0.2)' }}>
+                <div style={{ fontFamily: 'JetBrains Mono', fontSize: '0.6rem', color: '#00FF94', fontWeight: 700, marginBottom: 6, textTransform: 'uppercase' }}>🛡️ Kyron Protected</div>
                 <div style={{ fontFamily: 'JetBrains Mono', fontSize: '0.65rem', color: 'rgba(240,240,248,0.7)', lineHeight: 1.4 }}>
                   Risk Score: <strong style={{ color: '#FF3D5A' }}>{screen?.risk_score?.toFixed(2)}</strong><br />
                   Verdict: <strong style={{ color: '#FF3D5A' }}>{screen?.verdict?.toUpperCase()}</strong>
@@ -567,7 +567,7 @@ function AuditPage({ activeTab }) {
           <tbody>
             {filtered.length === 0 ? (
               <tr><td colSpan={7} style={{ textAlign: 'center', padding: '3rem', fontFamily: 'JetBrains Mono', fontSize: '0.7rem', color: 'rgba(240,240,248,0.25)' }}>
-                No audit records found for {user?.role !== 'admin' ? `your account (${user?.email})` : 'this filter'}. Run an attack scenario or use SentinelGuard SDK to populate.
+                No audit records found for {user?.role !== 'admin' ? `your account (${user?.email})` : 'this filter'}. Run an attack scenario or use KyronGuard SDK to populate.
               </td></tr>
             ) : filtered.map(row => {
               const c = VERDICT_COLOR[row.verdict] || '#F0F0F8';
@@ -700,7 +700,7 @@ export default function App() {
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#04060F', color: 'rgba(240,240,248,0.3)', fontFamily: 'JetBrains Mono', fontSize: '0.8rem', letterSpacing: '0.1em' }}>
-        INITIALIZING SENTINEL LAYER...
+        INITIALIZING KYRON LAYER...
       </div>
     );
   }

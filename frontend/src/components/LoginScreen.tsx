@@ -43,7 +43,7 @@ const ROLES: RoleOption[] = [
     role: 'admin',
     name: 'Saswat',
     displayTitle: 'Admin (Saswat)',
-    email: 'saswat.admin@sentinel.sec',
+    email: 'saswat.admin@kyron.sec',
     icon: '👑',
     themeColor: '#F59E0B',
     borderClass: 'border-amber-500/40 hover:border-amber-400',
@@ -56,7 +56,7 @@ const ROLES: RoleOption[] = [
     role: 'developer',
     name: 'Dev Engineer',
     displayTitle: 'Developer',
-    email: 'dev.ai@sentinel.sec',
+    email: 'dev.ai@kyron.sec',
     icon: '💻',
     themeColor: '#10B981',
     borderClass: 'border-emerald-500/40 hover:border-emerald-400',
@@ -69,7 +69,7 @@ const ROLES: RoleOption[] = [
     role: 'intern',
     name: 'Junior Analyst',
     displayTitle: 'Intern (Restricted)',
-    email: 'intern.temp@sentinel.sec',
+    email: 'intern.temp@kyron.sec',
     icon: '🪪',
     themeColor: '#8B5CF6',
     borderClass: 'border-purple-500/40 hover:border-purple-400',
@@ -82,7 +82,7 @@ const ROLES: RoleOption[] = [
     role: 'tech_lead',
     name: 'Alex Vance',
     displayTitle: 'Tech Lead',
-    email: 'alex.lead@sentinel.sec',
+    email: 'alex.lead@kyron.sec',
     icon: '🛡️',
     themeColor: '#3B82F6',
     borderClass: 'border-blue-500/40 hover:border-blue-400',
@@ -95,7 +95,7 @@ const ROLES: RoleOption[] = [
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBackToLanding, reducedMotion = false }) => {
   const [authMode, setAuthMode] = useState<'role' | 'credentials'>('role');
-  const [accountNumber, setAccountNumber] = useState('SENTINEL-SEC-8809');
+  const [accountNumber, setAccountNumber] = useState('KYRON-SEC-8809');
   const [password, setPassword] = useState('••••••••••••');
   const [showPassword, setShowPassword] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -119,7 +119,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
       setAuthStageText('Verifying JWT HS256 & Stage 0 RBAC claims...');
       await new Promise(r => setTimeout(r, 350));
 
-      setAuthStageText('Handshake approved! Connecting to Sentinel Gateway...');
+      setAuthStageText('Handshake approved! Connecting to Kyron Gateway...');
       await new Promise(r => setTimeout(r, 350));
 
       const session: UserSession = {
@@ -159,7 +159,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
     setAuthStageText(`Connecting via ${provider} Identity Provider...`);
 
     setTimeout(() => {
-      setAuthStageText(`Received ${provider} OAuth Token → Mapping to Sentinel RBAC...`);
+      setAuthStageText(`Received ${provider} OAuth Token → Mapping to Kyron RBAC...`);
     }, 550);
 
     setTimeout(() => {
@@ -185,17 +185,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
     setAuthStageText(`Verifying account ${accountNumber}...`);
 
     setTimeout(() => {
-      setAuthStageText('Decrypting password hash & checking Sentinel security posture...');
+      setAuthStageText('Decrypting password hash & checking Kyron security posture...');
     }, 500);
 
     setTimeout(() => {
       const session: UserSession = {
         id: `acc_${Math.random().toString(36).substring(2, 9)}`,
-        name: accountNumber.replace('SENTINEL-SEC-', 'Operator '),
+        name: accountNumber.replace('KYRON-SEC-', 'Operator '),
         role: 'tech_lead',
         roleTitle: 'Security Operator',
         badge: '🛡️',
-        email: `${accountNumber.toLowerCase()}@sentinel.internal`,
+        email: `${accountNumber.toLowerCase()}@kyron.internal`,
         avatarColor: '#0EA5E9',
         authMethod: 'credentials',
         loginTime: new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }),
@@ -864,7 +864,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
                   </motion.div>
 
                   <h3 className="text-lg font-display font-bold text-white mb-2">
-                    Authorizing Sentinel Session
+                    Authorizing Kyron Session
                   </h3>
                   
                   <p className="text-xs font-mono text-cyan-300 max-w-xs h-10 flex items-center justify-center animate-pulse">
@@ -900,7 +900,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
 
               {/* Main Title */}
               <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-white tracking-tight">
-                Sentinel Layer
+                Kyron Layer
               </h2>
 
               {/* Subtitle Badge */}
@@ -977,7 +977,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
                       value={accountNumber}
                       onChange={(e) => setAccountNumber(e.target.value)}
                       required
-                      placeholder="e.g. SENTINEL-SEC-8809"
+                      placeholder="e.g. KYRON-SEC-8809"
                       className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
                     />
                   </div>

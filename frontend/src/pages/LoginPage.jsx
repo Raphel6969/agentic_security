@@ -85,7 +85,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <h1 style={styles.title}>Sentinel Layer</h1>
+        <h1 style={styles.title}>Kyron Layer</h1>
         <p style={styles.subtitle}>Runtime AI Security Platform</p>
         <p style={styles.tagline}>Sign in to access the agentic security console</p>
 

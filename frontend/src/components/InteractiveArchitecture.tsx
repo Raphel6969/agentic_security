@@ -39,7 +39,7 @@ export const InteractiveArchitecture: React.FC<InteractiveArchitectureProps> = (
               <span className="font-semibold uppercase tracking-wider">UNDER THE HOOD :: SCROLL-EXPANDING ARCHITECTURE</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-white tracking-tight leading-[1.18]">
-              Watch Sentinel open before your eyes.
+              Watch Kyron open before your eyes.
             </h2>
             <p className="mt-4 text-sm sm:text-base text-slate-300/90 leading-relaxed font-sans">
               Explore the 8-phase runtime execution pipeline. As actions travel from the autonomous AI agent, the gateway expands to inspect, arbitrate, authorize, and audit every signal.
@@ -159,7 +159,7 @@ export const InteractiveArchitecture: React.FC<InteractiveArchitectureProps> = (
               <div className="flex items-center justify-between pb-3 border-b border-white/10">
                 <span className="text-xs font-mono text-slate-200 font-bold flex items-center gap-2">
                   <Shield className="w-4 h-4 text-teal-400" />
-                  SENTINEL SECURITY GATEWAY (/screen API)
+                  KYRON SECURITY GATEWAY (/screen API)
                 </span>
                 <span className="text-[10px] font-mono text-teal-400 font-semibold">LATENCY: &lt;1.8ms</span>
               </div>

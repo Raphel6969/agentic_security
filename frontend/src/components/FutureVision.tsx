@@ -57,7 +57,7 @@ export const FutureVision: React.FC = () => {
             </span>
           </h2>
           <p className="mt-4 text-sm sm:text-base text-slate-300/90 leading-relaxed font-sans">
-            As autonomous agents become multi-agent organizations operating critical software, Sentinel is expanding toward stateful behavioral analysis and kernel-level sandboxing.
+            As autonomous agents become multi-agent organizations operating critical software, Kyron is expanding toward stateful behavioral analysis and kernel-level sandboxing.
           </p>
         </div>
 

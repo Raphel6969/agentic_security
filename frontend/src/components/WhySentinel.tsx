@@ -38,7 +38,7 @@ export const WhySentinel: React.FC = () => {
             </div>
             <div className="text-teal-300 font-bold flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-teal-400" />
-              SENTINEL AGENT RUNTIME SECURITY
+              KYRON AGENT RUNTIME SECURITY
             </div>
           </div>
 

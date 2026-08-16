@@ -97,7 +97,7 @@ export default function AttackSimulator({ onRunScenario }) {
             {/* Sentinel side */}
             <div className="result-col safe" style={{ flex: 1 }}>
               <div style={{ color: '#00FF94', fontWeight: 700, fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>
-                ■ Sentinel Protected
+                ■ Kyron Protected
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                 <RiskRadarGauge score={screen?.risk_score || 0} size={100} />

@@ -45,7 +45,7 @@ export const AttackLab: React.FC<AttackLabProps> = ({ onOpenDemo }) => {
               What happens when an agent is left unprotected?
             </h2>
             <p className="mt-4 text-sm sm:text-base text-slate-300/90 leading-relaxed font-sans">
-              Compare an autonomous agent operating blindly against tools versus one secured behind the Sentinel runtime gateway.
+              Compare an autonomous agent operating blindly against tools versus one secured behind the Kyron runtime gateway.
             </p>
           </div>
 
@@ -162,7 +162,7 @@ export const AttackLab: React.FC<AttackLabProps> = ({ onOpenDemo }) => {
               <div className="flex items-center justify-between text-xs font-mono text-slate-200 mb-4">
                 <span className="flex items-center gap-1.5 font-bold">
                   <ShieldCheck className="w-4 h-4 text-teal-400" />
-                  SENTINEL RUNTIME FIREWALL
+                  KYRON RUNTIME FIREWALL
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-teal-500 to-indigo-600 text-white text-[10px] uppercase font-bold shadow-sm">
                   PROTECTED

@@ -7,14 +7,14 @@ export const AgentIntegration: React.FC = () => {
 
   const snippets: Record<string, string> = {
     python: `# Python SDK Integration
-from sentinel import SentinelClient
+from kyron import KyronClient
 
-# 1. Initialize client pointing to local or hosted Sentinel gateway
-sentinel = SentinelClient(base_url="http://localhost:8000")
+# 1. Initialize client pointing to local or hosted Kyron gateway
+kyron = KyronClient(base_url="http://localhost:8000")
 
 async def execute_agent_tool(agent_id: str, tool_name: str, arguments: dict):
     # 2. Intercept proposed action before execution
-    screen_result = await sentinel.screen(
+    screen_result = await kyron.screen(
         agent_id=agent_id,
         tool=tool_name,
         params=arguments,
@@ -27,16 +27,16 @@ async def execute_agent_tool(agent_id: str, tool_name: str, arguments: dict):
     elif screen_result.verdict == "REQUIRE_APPROVAL":
         return await pause_for_human_approval(screen_result.session_id)
     else:
-        raise SecurityException(f"Blocked by Sentinel: {screen_result.reason}")`,
+        raise SecurityException(f"Blocked by Kyron: {screen_result.reason}")`,
 
     typescript: `// TypeScript / Node.js SDK
-import { SentinelClient } from '@sentinel-layer/sdk';
+import { KyronClient } from '@kyron-layer/sdk';
 
-const sentinel = new SentinelClient({ endpoint: process.env.SENTINEL_GATEWAY_URL });
+const kyron = new KyronClient({ endpoint: process.env.KYRON_GATEWAY_URL });
 
 export async function interceptToolCall(agentId: string, tool: string, args: Record<string, unknown>) {
   // Pre-execution runtime interception
-  const decision = await sentinel.screen({
+  const decision = await kyron.screen({
     agentId,
     tool,
     params: args,
@@ -47,36 +47,36 @@ export async function interceptToolCall(agentId: string, tool: string, args: Rec
   } else if (decision.verdict === 'REQUIRE_APPROVAL') {
     return await requestOperatorApproval(decision.eventId);
   } else {
-    throw new Error(\`Sentinel Block: \${decision.explanation}\`);
+    throw new Error(\`Kyron Block: \${decision.explanation}\`);
   }
 }`,
 
     langchain: `# LangChain Tool Interceptor Callback
 from langchain.callbacks.base import BaseCallbackHandler
-from sentinel import SentinelClient
+from kyron import KyronClient
 
-class SentinelSecurityCallback(BaseCallbackHandler):
+class KyronSecurityCallback(BaseCallbackHandler):
     def __init__(self, gateway_url: str):
-        self.sentinel = SentinelClient(base_url=gateway_url)
+        self.kyron = KyronClient(base_url=gateway_url)
 
     def on_tool_start(self, serialized: dict, input_str: str, **kwargs):
-        decision = self.sentinel.screen_sync(
+        decision = self.kyron.screen_sync(
             tool=serialized.get("name"),
             input_payload=input_str
         )
         if decision.verdict == "BLOCK":
-            raise ValueError(f"Sentinel Policy Block: {decision.reason}")`,
+            raise ValueError(f"Kyron Policy Block: {decision.reason}")`,
 
     crewai: `# CrewAI Custom Guardrail Hook
 from crewai.tools import tool
-from sentinel import SentinelClient
+from kyron import KyronClient
 
-sentinel = SentinelClient(base_url="http://sentinel-gateway:8000")
+kyron = KyronClient(base_url="http://kyron-gateway:8000")
 
 @tool("sandboxed_filesystem_writer")
 def safe_write_file(path: str, content: str) -> str:
-    """Writes content to disk after Sentinel validation"""
-    verdict = sentinel.screen_sync(
+    """Writes content to disk after Kyron validation"""
+    verdict = kyron.screen_sync(
         tool="write_file",
         params={"path": path, "content": content}
     )
@@ -108,7 +108,7 @@ def safe_write_file(path: str, content: str) -> str:
             Add a security layer without rebuilding your agent.
           </h2>
           <p className="mt-4 text-sm sm:text-base text-slate-300/90 leading-relaxed font-sans">
-            Sentinel is designed around a thin agent-side integration layer. Instead of rewriting your agent's core architecture, intercept the single moment before a tool executes and forward the action to Sentinel.
+            Kyron is designed around a thin agent-side integration layer. Instead of rewriting your agent's core architecture, intercept the single moment before a tool executes and forward the action to Kyron.
           </p>
         </div>
 
@@ -125,7 +125,7 @@ def safe_write_file(path: str, content: str) -> str:
             <div className="text-xs font-mono text-teal-300 mb-2 font-bold">STEP 02</div>
             <h3 className="text-lg font-display font-semibold text-white">Query /screen Endpoint</h3>
             <p className="text-xs text-slate-400 mt-2">
-              Forward context, tool target, and parameters. Sentinel resolves in &lt;2ms.
+              Forward context, tool target, and parameters. Kyron resolves in &lt;2ms.
             </p>
           </div>
           <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl p-6 shadow-lg hover:bg-white/10 hover:border-white/20 transition-all">

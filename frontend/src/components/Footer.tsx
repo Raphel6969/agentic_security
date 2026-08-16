@@ -13,7 +13,7 @@ export const Footer: React.FC = () => {
               <Shield className="w-4 h-4 text-teal-400" />
             </div>
             <div>
-              <span className="font-display font-bold text-lg text-white">SENTINEL</span>
+              <span className="font-display font-bold text-lg text-white">KYRON</span>
               <span className="block text-[11px] font-mono text-slate-400 uppercase">Agent Runtime Security</span>
             </div>
           </div>
@@ -63,7 +63,7 @@ export const Footer: React.FC = () => {
 
         {/* Copyright */}
         <div className="text-xs font-mono text-slate-400 md:text-right">
-          <div>© 2026 Sentinel Layer.</div>
+          <div>© 2026 Kyron Layer.</div>
           <div className="text-[11px] text-slate-500 mt-1">Autonomous Runtime Firewall</div>
         </div>
 
