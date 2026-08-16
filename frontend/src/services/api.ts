@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
 export interface ScreenRequestPayload {
   agent_context: {
@@ -79,14 +79,18 @@ export interface ScenarioDefinition {
 // ── Auth & Headers ─────────────────────────────────────────────────────────────
 
 export const getStoredToken = (): string | null => {
-  return localStorage.getItem('sentinel_jwt_token');
+  return localStorage.getItem('sentinel_jwt_token') || localStorage.getItem('sentinel_token') || localStorage.getItem('sentinel_jwt');
 };
 
 export const setStoredToken = (token: string | null) => {
   if (token) {
     localStorage.setItem('sentinel_jwt_token', token);
+    localStorage.setItem('sentinel_token', token);
+    localStorage.setItem('sentinel_jwt', token);
   } else {
     localStorage.removeItem('sentinel_jwt_token');
+    localStorage.removeItem('sentinel_token');
+    localStorage.removeItem('sentinel_jwt');
   }
 };
 
@@ -378,33 +382,68 @@ export async function deactivateUser(
   return response.json();
 }
 
-// ── Real-Time SSE Stream Helper ───────────────────────────────────────────────
+// ── Real-Time Stream Helper (WebSocket + SSE Fallback) ────────────────────────
 
 export function subscribeToEventStream(
   onEvent: (event: any) => void,
   token?: string | null
 ): () => void {
   const activeToken = token !== undefined ? token : getStoredToken();
-  const url = activeToken
-    ? `${API_BASE_URL}/events/stream?token=${encodeURIComponent(activeToken)}`
-    : `${API_BASE_URL}/events/stream`;
+  const tokenParam = activeToken ? `?token=${encodeURIComponent(activeToken)}` : '';
+  
+  let ws: WebSocket | null = null;
+  let es: EventSource | null = null;
+  let isClosed = false;
 
-  const eventSource = new EventSource(url);
-
-  eventSource.onmessage = (event) => {
+  const connectWS = () => {
+    if (isClosed) return;
     try {
-      const data = JSON.parse(event.data);
-      onEvent(data);
-    } catch (e) {
-      console.warn('Failed to parse SSE event data:', event.data);
+      const wsUrl = API_BASE_URL.replace(/^http/, 'ws') + `/ws/events${tokenParam}`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          onEvent(data);
+        } catch {}
+      };
+
+      ws.onerror = () => {
+        if (!isClosed) fallbackSSE();
+      };
+
+      ws.onclose = () => {
+        if (!isClosed) fallbackSSE();
+      };
+    } catch {
+      fallbackSSE();
     }
   };
 
-  eventSource.onerror = (err) => {
-    console.debug('SSE connection event / reconnecting...');
+  const fallbackSSE = () => {
+    if (isClosed || es) return;
+    try {
+      const sseUrl = `${API_BASE_URL}/events/stream${tokenParam}`;
+      es = new EventSource(sseUrl);
+
+      es.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          onEvent(data);
+        } catch {}
+      };
+
+      es.onerror = () => {
+        console.debug('SSE stream reconnecting...');
+      };
+    } catch {}
   };
 
+  connectWS();
+
   return () => {
-    eventSource.close();
+    isClosed = true;
+    if (ws) ws.close();
+    if (es) es.close();
   };
 }
