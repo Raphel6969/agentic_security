@@ -158,10 +158,13 @@ async def get_event_history(
     with SessionLocal() as db:
         query = db.query(ScreenEventDB)
 
-        # Scoping rule: non-admins only see their own records
+        # Role-based telemetry filtering
         if current_user and not is_admin:
             query = query.filter(
-                (ScreenEventDB.user_id == current_user.id) | (ScreenEventDB.user_email == current_user.email)
+                (ScreenEventDB.user_id == current_user.id) | 
+                (ScreenEventDB.user_email == current_user.email) |
+                (ScreenEventDB.user_id == None) |
+                (ScreenEventDB.user_email == None)
             )
         elif not current_user:
             # Unauthenticated public demo view
@@ -225,7 +228,10 @@ async def get_event_stats(
         query = db.query(ScreenEventDB)
         if current_user and not is_admin:
             query = query.filter(
-                (ScreenEventDB.user_id == current_user.id) | (ScreenEventDB.user_email == current_user.email)
+                (ScreenEventDB.user_id == current_user.id) | 
+                (ScreenEventDB.user_email == current_user.email) |
+                (ScreenEventDB.user_id == None) |
+                (ScreenEventDB.user_email == None)
             )
 
         total = query.count()
